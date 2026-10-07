@@ -681,9 +681,11 @@ const Store = {
     catch (e) { toast('No hay espacio en este navegador para guardar más fotos.'); }
   },
   async addGarment(doc) {
-    if (S.mode === 'cloud') { await this.gCol.add(doc); return; }
-    S.garments = S.garments.concat([Object.assign({ id: 'g' + Date.now().toString(36) }, doc)]);
+    if (S.mode === 'cloud') { const ref = await this.gCol.add(doc); return ref.id; }
+    const id = 'g' + Date.now().toString(36);
+    S.garments = S.garments.concat([Object.assign({ id }, doc)]);
     this.persistLocal(); render();
+    return id;
   },
   async updateGarment(id, patch) {
     if (S.mode === 'cloud') { await this.gCol.doc(id).update(patch); return; }
@@ -917,6 +919,43 @@ function viewDict() {
     <div class="swgrid">${list.map(w => `<button class="sw" data-action="open-color" data-w="${w.i}"><div class="chipc" style="--c:${w.hex}"></div><div class="lbl"><b>${esc(w.name)}</b><span>${w.i + 1} · ${w.hex}</span></div></button>`).join('')}</div>`;
 }
 
+/* ---------- Ideas para una prenda (funciona aunque el clóset esté vacío) ---------- */
+const IDEA_SLOTS = { top: ['bottom', 'shoes', 'outer'], bottom: ['top', 'shoes', 'outer'], dress: ['shoes', 'outer', 'acc'], outer: ['top', 'bottom', 'shoes'], shoes: ['top', 'bottom', 'outer'], acc: ['top', 'bottom', 'shoes'] };
+function ideasFor(g, limit) {
+  const T = S.T, others = pool().filter(x => x.id !== g.id), out = [];
+  for (const combo of COMBOS) {
+    let gm = null;
+    for (const w of combo.colors) { const d = dist(g, w); if (d <= T && (!gm || d < gm.d)) gm = { w, d }; }
+    if (!gm) continue;
+    const rest = combo.colors.filter(w => w !== gm.w && dist(g, w) > T);
+    if (!rest.length) continue;
+    const slots = (IDEA_SLOTS[g.category] || IDEA_SLOTS.top).slice(0, rest.length);
+    const byL = rest.slice().sort((a, b) => W[a].lab[0] - W[b].lab[0]);
+    const pieces = slots.map(s => {
+      const w = s === 'top' ? byL.pop() : byL.shift();
+      let best = null, bd = Infinity;
+      for (const x of others) if (x.category === s) { const d = dist(x, w); if (d < bd) { bd = d; best = x; } }
+      return { slot: s, w, g: bd <= T ? best : null, d: bd };
+    });
+    const filled = pieces.filter(p => p.g).length;
+    out.push({ combo, gm, pieces, filled, score: gm.d - filled * 6 });
+  }
+  out.sort((a, b) => a.score - b.score);
+  return out.slice(0, limit || 8);
+}
+function ideaCard(g, i) {
+  return `<article class="outfit">
+    <div class="outfit-head"><span class="no">N.º ${i.combo.no}</span><span class="fit">${i.filled ? `Tienes ${i.filled + 1} de ${i.pieces.length + 1}` : 'Idea con colores de Wada'}</span></div>
+    ${paletteHtml(i.combo.colors)}
+    <ul class="pieces">
+      <li class="piece">${media(g)}<div style="min-width:0"><b>${esc(g.name)}</b><small>Esta prenda · <i style="--c:${W[i.gm.w].hex}"></i>${esc(W[i.gm.w].name)}</small></div></li>
+      ${i.pieces.map(p => p.g
+        ? `<li class="piece">${media(p.g)}<div style="min-width:0"><b>${esc(p.g.name)}</b><small>De tu clóset · <i style="--c:${W[p.w].hex}"></i>${esc(W[p.w].name)}</small></div></li>`
+        : `<li class="piece"><div class="media"><div class="bands"><span style="background:${W[p.w].hex}"></span></div></div><div style="min-width:0"><b>${esc(CAT[p.slot].noun)} ${esc(W[p.w].name)}</b><small>Aún no la tienes · <button class="linkbtn" data-action="imagine-from" data-w="${p.w}" data-cat="${p.slot}">Imaginar</button></small></div></li>`).join('')}
+    </ul>
+  </article>`;
+}
+
 /* ---------- Hojas ---------- */
 function openSheet(type, data) { S.stack.push({ type, data: data || {} }); S.armed = null; renderSheet(); }
 function closeSheet() { S.stack.pop(); S.armed = null; renderSheet(); }
@@ -1033,10 +1072,26 @@ const SHEETS = {
         ${ex ? '' : `<label class="switch"><input type="checkbox" id="g-neutral" data-id="${esc(g.id)}"${g.neutral ? ' checked' : ''}> Tratar como neutro (combina con todo)</label>`}
         <div class="row">
           <button class="btn primary" data-action="combine-with" data-id="${esc(g.id)}">Combinar con esta prenda</button>
+          <button class="btn" data-action="open-ideas" data-id="${esc(g.id)}">Ideas para combinar</button>
           ${ex ? '' : `<button class="btn" data-action="archive" data-id="${esc(g.id)}">${g.archived ? 'Sacar del archivo' : 'Archivar'}</button>
           <button class="btn danger${armed ? ' armed' : ''}" data-action="delete" data-id="${esc(g.id)}">${armed ? 'Confirmar eliminación' : 'Eliminar'}</button>`}
         </div>
         ${g.createdAt ? `<span class="hint">Registrada el ${new Date(g.createdAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}</span>` : ''}`
+    };
+  },
+  ideas(data) {
+    const g = findG(data.id) || data.g;
+    if (!g) return { title: 'Ideas para combinar', body: '<p>Esta prenda ya no está en tu clóset.</p>' };
+    const list = ideasFor(g, 8);
+    const others = pool().filter(x => x.id !== g.id).length;
+    return {
+      title: data.fresh ? '¡Prenda guardada!' : 'Ideas para combinar',
+      body: `<p style="margin:0">Ideas para combinar <b>${esc(g.name)}</b>, según el diccionario de Wada.</p>
+        <p class="note" style="margin:0">${others < 3
+          ? 'Todavía conozco poco tu clóset, así que te sugiero piezas por su color. Cuando subas más prendas, completaré estas ideas con tu ropa.'
+          : 'Las piezas "De tu clóset" ya las tienes; las demás son ideas para imaginar o conseguir.'}</p>
+        ${list.length ? `<div class="outfits">${list.map(i => ideaCard(g, i)).join('')}</div>`
+          : `<div class="empty">No encontré combinaciones de Wada para este color con la tolerancia actual (ΔE ${S.T}). Puedes subirla en Combinar.</div>`}`
     };
   },
   pick(data) {
@@ -1354,10 +1409,10 @@ async function saveDraft() {
     assetId: assetId || null, thumb: d.thumb, createdAt: Date.now(), archived: false
   };
   try {
-    await Store.addGarment(doc);
+    const id = await Store.addGarment(doc);
     if (S.mode === 'cloud' && !assetId) toast('Guardada. La foto quedó solo en miniatura.');
-    else toast('Prenda guardada en el clóset.');
     S.filter = 'all'; closeAll(); render();
+    openSheet('ideas', { id, g: Object.assign({ id }, doc), fresh: true });
   } catch (e) {
     d.saving = false; renderSheet();
     toast(e && e.code === 'quota_exceeded' ? 'El clóset llegó a su límite de almacenamiento.' : 'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');
@@ -1373,7 +1428,7 @@ async function saveImagine() {
     colors: [{ wada: w.i, lab: w.lab.map(round2), hex: w.hex, measuredHex: null, weight: 1, de: 0, manual: true }],
     neutral: isNeutralLab(w.lab), assetId: null, thumb: null, createdAt: Date.now(), archived: false
   };
-  try { await Store.addGarment(doc); toast('Prenda imaginada agregada.'); S.filter = 'all'; closeAll(); render(); }
+  try { const id = await Store.addGarment(doc); S.filter = 'all'; closeAll(); render(); openSheet('ideas', { id, g: Object.assign({ id }, doc), fresh: true }); }
   catch (e) { m.saving = false; renderSheet(); toast('No se pudo guardar. Inténtalo de nuevo.'); }
 }
 
@@ -1383,7 +1438,8 @@ const A = {
   filter(el) { S.filter = el.dataset.f; render(); },
   'add-menu'() { S.stack = [{ type: 'add', data: {} }]; renderSheet(); },
   imagine() { S.imagine = { category: '', wada: null, name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
-  'imagine-from'(el) { S.imagine = { category: '', wada: Number(el.dataset.w), name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
+  'open-ideas'(el) { openSheet('ideas', { id: el.dataset.id }); },
+  'imagine-from'(el) { S.imagine = { category: el.dataset.cat || '', wada: Number(el.dataset.w), name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
   'imagine-cat'(el) { S.imagine.category = el.dataset.cat; renderSheet(); },
   'imagine-color'(el) { S.imagine.wada = Number(el.dataset.w); renderSheet(); },
   'save-imagine'() { saveImagine(); },
