@@ -304,6 +304,21 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .toast { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); border-radius: 999px; }
 .empty { border: 0; background: var(--surface); box-shadow: var(--shadow); border-radius: var(--r); }
 .tagline.ok { color: var(--accent); }
+
+/* Animación de carga: una combinación de Wada que salta */
+.loader { display: grid; justify-items: center; gap: 14px; padding-block: 56px; color: var(--muted); text-align: center; }
+.loader-sw { display: flex; gap: 8px; }
+.loader-sw span { width: 22px; height: 22px; border-radius: 6px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.loader p { margin: 0; font-size: 14px; }
+.loader small { font-size: 12px; opacity: .8; }
+.splash { position: fixed; inset: 0; z-index: 50; background: var(--paper); display: grid; place-items: center; transition: opacity .35s ease; }
+.splash.out { opacity: 0; pointer-events: none; }
+.splash .loader { padding-block: 0; }
+.splash b { font-family: var(--f-display); font-size: 30px; color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .loader-sw span { animation: hop .9s ease-in-out infinite; }
+  @keyframes hop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-12px); } 55% { transform: translateY(0) scaleY(.9); } }
+}
 </style>
 
 <div class="wrap">
@@ -766,8 +781,21 @@ function recentKeys() {
 }
 function savedFor(no, key) { return S.outfits.find(o => o.comboNo === no && (o.garmentIds || []).slice().sort().join(',') === key); }
 
+/* ---------- Animación de carga ---------- */
+const LOADER_COMBO = (() => { const four = COMBOS.filter(c => c.colors.length === 4); return four[Math.floor(Math.random() * four.length)]; })();
+function loaderHtml(text) {
+  return `<div class="loader" role="status"><div class="loader-sw" aria-hidden="true">${LOADER_COMBO.colors.map((i, k) => `<span style="background:${W[i].hex};animation-delay:${(k * 0.12).toFixed(2)}s"></span>`).join('')}</div><p>${esc(text)}</p><small>Combinación N.º ${LOADER_COMBO.no}</small></div>`;
+}
+const SPLASH_AT = Date.now();
+function hideSplash() {
+  const sp = document.getElementById('splash');
+  if (!sp || sp.classList.contains('out')) return;
+  setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 400); }, Math.max(0, 900 - (Date.now() - SPLASH_AT)));
+}
+
 /* ---------- Render ---------- */
 function render() {
+  if (S.loaded) hideSplash();
   const st = $('#status');
   st.dataset.mode = S.mode;
   st.textContent = { loading: 'Conectando…', cloud: 'Guardado en tu cuenta', local: IN_APP ? 'Guardado en este celular' : 'Solo en este navegador', error: 'Sin conexión con la base de datos' }[S.mode];
@@ -807,7 +835,7 @@ function addButtons() {
 }
 
 function viewCloset() {
-  if (!S.loaded) return `<div class="loading">Cargando tu clóset…</div>`;
+  if (!S.loaded) return loaderHtml('Cargando tu clóset…');
   const all = allGarments();
   const archived = all.filter(g => g.archived);
   const active = all.filter(g => !g.archived);
@@ -836,7 +864,7 @@ function viewCloset() {
     ${list.length ? `<div class="grid">${list.map(card).join('')}</div>` : `<div class="empty" style="margin-top:12px">${q ? 'No encontré prendas con esa búsqueda.' : 'No hay prendas en esta categoría.'}</div>`}`;
 }
 function viewSaved() {
-  if (!S.loaded) return `<div class="loading">Cargando…</div>`;
+  if (!S.loaded) return loaderHtml('Cargando…');
   const saved = S.outfits.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   return `<div class="sec-head" style="margin-top:8px"><h2>Outfits guardados</h2><span class="eyebrow">${saved.length}</span></div>
     ${saved.length ? `<div class="outfits">${saved.map(savedCard).join('')}</div>` : `<div class="empty">Todavía no guardas outfits. En Combinar, toca Guardar en los que te gusten.</div>`}`;
@@ -853,7 +881,7 @@ function card(g) {
 }
 
 function viewCombine() {
-  if (!S.loaded) return `<div class="loading">Cargando tu clóset…</div>`;
+  if (!S.loaded) return loaderHtml('Cargando tu clóset…');
   const p = pool();
   if (S.anchor && !p.find(g => g.id === S.anchor)) S.anchor = '';
   const opts = [`<option value="">Sorpréndeme: todo el clóset</option>`]
@@ -1002,7 +1030,7 @@ const SHEETS = {
   draft() {
     const d = S.draft;
     if (!d) return { title: 'Nueva prenda', body: '' };
-    if (d.step === 'loading') return { title: 'Nueva prenda', body: `<div class="loading">Preparando la foto…</div>` };
+    if (d.step === 'loading') return { title: 'Nueva prenda', body: loaderHtml('Preparando la foto…') };
     if (d.step === 'error') return { title: 'Nueva prenda', body: `<p>${esc(d.error)}</p><div class="row"><label class="btn primary" for="in-camera">Tomar otra foto</label><label class="btn" for="in-gallery">Subir otra</label></div>` };
     if (d.step === 'cut') {
       const c = d.cut;
@@ -1548,6 +1576,11 @@ document.addEventListener('error', e => {
   if (t && t.tagName === 'IMG' && t.dataset.fb && t.src !== t.dataset.fb) t.src = t.dataset.fb;
 }, true);
 
+if (window.Capacitor) {
+  const sp = document.createElement('div'); sp.id = 'splash'; sp.className = 'splash';
+  sp.innerHTML = `<div class="loader" role="status"><b>Clóset Wada</b><div class="loader-sw" aria-hidden="true">${LOADER_COMBO.colors.map((i, k) => `<span style="background:${W[i].hex};animation-delay:${(k * 0.12).toFixed(2)}s"></span>`).join('')}</div><small>Combinación N.º ${LOADER_COMBO.no}</small></div>`;
+  document.body.appendChild(sp);
+}
 render();
 Store.init();
 </script>
