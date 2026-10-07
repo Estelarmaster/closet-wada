@@ -1,0 +1,6 @@
+{
+  "appId": "co.estelarmaster.closetwada",
+  "appName": "Clóset Wada",
+  "webDir": "www",
+  "android": { "backgroundColor": "#f4f5f7" }
+}
