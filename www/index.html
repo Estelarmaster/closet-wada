@@ -328,6 +328,18 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .mq { width: 100%; height: auto; display: block; }
 .hero-outfit .look { grid-template-columns: 120px minmax(0, 1fr); padding: 0; }
 .mq-big { max-width: 220px; margin: 0 auto; }
+
+/* Probador 3D */
+.stage { position: relative; height: min(56vh, 400px); border-radius: 20px; overflow: hidden; background: radial-gradient(circle at 50% 38%, var(--surface) 0 35%, var(--paper) 75%); box-shadow: inset 0 0 0 1px var(--line); }
+#look3d { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#look3d:active { cursor: grabbing; }
+.stage-status { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 16px; }
+.tones { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.tone { width: 30px; height: 30px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); cursor: pointer; padding: 0; }
+.tone[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
+.look-pieces { display: grid; gap: 6px; font-size: 14px; }
+.look-pieces span { display: flex; gap: 8px; align-items: center; }
+.look-pieces i { width: 14px; height: 14px; border-radius: 4px; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); display: inline-block; flex: none; }
 </style>
 
 <div class="wrap">
@@ -618,6 +630,7 @@ const S = {
   mode: 'loading', garments: [], outfits: [], loaded: false,
   stack: [], draft: null, imagine: null, armed: null, dictQuery: ''
 };
+try { S.skin = localStorage.getItem('closet-wada-skin') || ''; } catch (e) {}
 try { const p = JSON.parse(localStorage.getItem('closet-wada-prefs') || '{}'); if (p.T) S.T = p.T; if (p.tab) S.tab = p.tab; } catch (e) {}
 function savePrefs() { try { localStorage.setItem('closet-wada-prefs', JSON.stringify({ T: S.T, tab: S.tab })); } catch (e) {} }
 
@@ -862,7 +875,7 @@ function viewCloset() {
     </div>
     ${today ? `<div class="sec-head"><h2>Outfit del día</h2><button class="linkbtn" data-action="tab" data-tab="combine">Ver más</button></div>
       <div class="hero-outfit">
-        <div class="meta"><b>Combinación N.º ${today.combo.no}</b><span class="fit">${fitLabel(today.score)}</span></div>
+        <div class="meta"><b>Combinación N.º ${today.combo.no}</b>${lookBtn(partsOf(today.pieces), 'Outfit del día', rowsOf(today.pieces))}</div>
         ${paletteHtml(today.combo.colors)}
         <div class="look">${mannequin(partsOf(today.pieces))}<div style="display:grid;gap:10px"><div class="thumbs">${today.pieces.map(g => media(g)).join('')}</div>
         <span class="hint">${today.pieces.map(g => esc(g.name)).join(' + ')}</span></div></div>
@@ -920,6 +933,7 @@ function outfitCard(o) {
       ${usingExamples() ? '' : `<button class="star" data-action="save-outfit" data-no="${o.combo.no}" data-ids="${esc(o.key)}" aria-pressed="${!!sv}">${sv ? 'Guardado' : 'Guardar'}</button>`}</div>
     ${paletteHtml(o.combo.colors)}
     <div class="look">${mannequin(partsOf(o.pieces))}<ul class="pieces">${o.pieces.map(g => pieceHtml(g, o.assign)).join('')}</ul></div>
+    <div class="outfit-foot">${lookBtn(partsOf(o.pieces), 'Combinación N.º ' + o.combo.no, rowsOf(o.pieces))}</div>
   </article>`;
 }
 function paletteHtml(colors) {
@@ -941,7 +955,7 @@ function savedCard(o) {
     ${paletteHtml(combo.colors)}
     ${missing ? `<p class="hint" style="padding:10px 12px;margin:0">Una de las prendas ya no está en tu clóset.</p>` : `<div class="look">${mannequin(partsOf(gs))}<ul class="pieces">${gs.map(g => pieceHtml(g, assign)).join('')}</ul></div>`}
     <div class="outfit-foot">
-      ${missing ? '' : `<button class="btn small" data-action="wear" data-id="${esc(o.id)}">Lo usé hoy</button>`}
+      ${missing ? '' : `<button class="btn small" data-action="wear" data-id="${esc(o.id)}">Lo usé hoy</button>${lookBtn(partsOf(gs), 'Combinación N.º ' + o.comboNo, rowsOf(gs))}`}
       <button class="btn small danger" data-action="unsave" data-id="${esc(o.id)}">Quitar</button>
     </div>
   </article>`;
@@ -967,6 +981,7 @@ function partsFrom(list) {
   list.forEach(x => { if (x && x.slot && !parts[x.slot]) parts[x.slot] = { fill: x.fill, idea: !!x.idea }; });
   return parts;
 }
+function rowsOf(garments) { return garments.map(g => ({ hex: mainHex(g), label: g.name })); }
 function partsOf(garments) { return partsFrom(garments.map(g => ({ slot: g.category, fill: mainHex(g) }))); }
 function mannequin(parts, cls) {
   const L = 'stroke="var(--mq-line)" stroke-width="1.2" stroke-linejoin="round"';
@@ -985,6 +1000,143 @@ function mannequin(parts, cls) {
   if (has('outer')) s += `<path ${sty('outer')} d="M30 52Q44 46 56 51L51 100L49 162L31 162Z"/><path ${sty('outer')} d="M90 52Q76 46 64 51L69 100L71 162L89 162Z"/><path ${sty('outer')} d="M30 54L18 112L15 150L26 151L32 114L40 74Z"/><path ${sty('outer')} d="M90 54L102 112L105 150L94 151L88 114L80 74Z"/>`;
   if (has('acc')) s += `<path d="M95 128Q103 108 109 130" fill="none" stroke="var(--mq-line)" stroke-width="2"/><rect ${sty('acc')} x="92" y="148" width="21" height="22" rx="4"/>`;
   return s + `</svg>`;
+}
+
+/* ---------- Personaje 3D (propio, estilo muñeco de plastilina) ---------- */
+const SKINS = ['#f3cfb3', '#dba67f', '#a8704b', '#6b432b'];
+const LOOKS = {};
+let lookSeq = 0;
+function regLook(parts, title, rows) { const k = 'l' + (++lookSeq); LOOKS[k] = { parts, title, rows }; return k; }
+function lookBtn(parts, title, rows) { return `<button class="btn small" data-action="look3d" data-look="${regLook(parts, title, rows)}">Ver en 3D</button>`; }
+let THREE_P = null;
+function loadThree() {
+  if (window.THREE) return Promise.resolve(window.THREE);
+  if (THREE_P) return THREE_P;
+  THREE_P = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = IN_APP ? 'three.min.js' : 'https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js';
+    s.onload = () => res(window.THREE);
+    s.onerror = () => { THREE_P = null; rej(new Error('three')); };
+    document.head.appendChild(s);
+  });
+  return THREE_P;
+}
+let LOOK = null;
+function disposeLook() {
+  if (!LOOK) return;
+  cancelAnimationFrame(LOOK.raf);
+  LOOK.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+  LOOK.renderer.dispose();
+  LOOK = null;
+}
+function buildCharacter(T, parts, skin) {
+  const g = new T.Group();
+  const mat = (hex, idea) => new T.MeshStandardMaterial({ color: new T.Color(hex).convertSRGBToLinear(), roughness: 0.6, metalness: 0, transparent: !!idea, opacity: idea ? 0.45 : 1, side: T.DoubleSide });
+  const add = (geo, m, x, y, z, s, r) => {
+    const mesh = new T.Mesh(geo, m); mesh.position.set(x, y, z);
+    if (s) mesh.scale.set(s[0], s[1], s[2]);
+    if (r) mesh.rotation.set(r[0], r[1], r[2]);
+    g.add(mesh); return mesh;
+  };
+  const cap = (r, l) => new T.CapsuleGeometry(r, l, 10, 24);
+  const sph = r => new T.SphereGeometry(r, 36, 28);
+  const P = k => parts[k];
+  const skinM = mat(skin), hairM = mat('#3f2b20'), eyeM = mat('#1c1c22'), cheekM = mat('#e9908e');
+  const dress = P('dress');
+  const topM = dress ? mat(dress.fill, dress.idea) : P('top') ? mat(P('top').fill, P('top').idea) : mat('#efefeb');
+  const botM = P('bottom') ? mat(P('bottom').fill, P('bottom').idea) : mat('#8e94a1');
+  const shoeM = P('shoes') ? mat(P('shoes').fill, P('shoes').idea) : mat('#f3f3f1');
+  // piernas y cadera
+  if (dress) {
+    add(cap(0.15, 0.62), skinM, -0.2, 0.6, 0);
+    add(cap(0.15, 0.62), skinM, 0.2, 0.6, 0);
+    add(new T.CylinderGeometry(0.44, 0.74, 0.8, 40, 1, true), topM, 0, 1.05, 0, [1, 1, 0.8]);
+  } else {
+    add(cap(0.21, 0.74), botM, -0.22, 0.66, 0);
+    add(cap(0.21, 0.74), botM, 0.22, 0.66, 0);
+    add(cap(0.43, 0.1), botM, 0, 1.12, 0, [1, 1, 0.74]);
+  }
+  // zapatos
+  add(cap(0.16, 0.2), shoeM, -0.22, 0.15, 0.1, [1, 1, 0.9], [Math.PI / 2, 0, 0]);
+  add(cap(0.16, 0.2), shoeM, 0.22, 0.15, 0.1, [1, 1, 0.9], [Math.PI / 2, 0, 0]);
+  // torso y mangas cortas
+  add(cap(0.5, 0.5), topM, 0, 1.6, 0, [1, 1, 0.7]);
+  if (!P('outer')) {
+    add(cap(0.19, 0.16), topM, -0.6, 1.86, 0, null, [0, 0, 0.55]);
+    add(cap(0.19, 0.16), topM, 0.6, 1.86, 0, null, [0, 0, -0.55]);
+  }
+  // brazos, manos
+  add(cap(0.125, 0.6), skinM, -0.75, 1.44, 0, null, [0, 0, 0.16]);
+  add(cap(0.125, 0.6), skinM, 0.75, 1.44, 0, null, [0, 0, -0.16]);
+  add(sph(0.15), skinM, -0.83, 1.02, 0.02);
+  add(sph(0.15), skinM, 0.83, 1.02, 0.02);
+  // chaqueta abierta: cuerpo, mangas largas y la camisa asomando al frente
+  if (P('outer')) {
+    const oM = mat(P('outer').fill, P('outer').idea);
+    add(cap(0.535, 0.56), oM, 0, 1.58, 0, [1, 1, 0.72]);
+    add(new T.BoxGeometry(0.26, 0.78, 0.04), topM, 0, 1.6, 0.375);
+    add(cap(0.155, 0.72), oM, -0.73, 1.5, 0, null, [0, 0, 0.17]);
+    add(cap(0.155, 0.72), oM, 0.73, 1.5, 0, null, [0, 0, -0.17]);
+  }
+  // bolso
+  if (P('acc')) {
+    const aM = mat(P('acc').fill, P('acc').idea);
+    add(new T.BoxGeometry(0.36, 0.3, 0.13), aM, 1.0, 1.0, 0.05);
+    add(new T.TorusGeometry(0.2, 0.025, 8, 24, Math.PI), aM, 1.0, 1.15, 0.05);
+  }
+  // cuello y cabeza
+  add(cap(0.13, 0.08), skinM, 0, 2.12, 0);
+  add(sph(0.52), skinM, 0, 2.62, 0, [1, 1.02, 0.95]);
+  add(sph(0.1), skinM, -0.51, 2.6, 0);
+  add(sph(0.1), skinM, 0.51, 2.6, 0);
+  add(new T.SphereGeometry(0.56, 36, 18, 0, Math.PI * 2, 0, Math.PI * 0.52), hairM, 0, 2.66, -0.03, [1, 1.02, 1], [-0.42, 0, 0]);
+  add(sph(0.26), hairM, -0.16, 3.0, 0.27, [1.35, 0.55, 0.7], [0, 0, 0.35]);
+  add(sph(0.055), eyeM, -0.17, 2.68, 0.47);
+  add(sph(0.055), eyeM, 0.17, 2.68, 0.47);
+  add(sph(0.08), cheekM, -0.3, 2.53, 0.41, [1, 0.6, 0.4]);
+  add(sph(0.08), cheekM, 0.3, 2.53, 0.41, [1, 0.6, 0.4]);
+  add(new T.TorusGeometry(0.11, 0.022, 8, 24, Math.PI), eyeM, 0, 2.52, 0.47, null, [0, 0, Math.PI]);
+  return g;
+}
+async function mountLook(data) {
+  const cv = document.getElementById('look3d'), status = document.getElementById('look-status');
+  if (!cv) return;
+  let T;
+  try { T = await loadThree(); }
+  catch (e) { if (status) status.innerHTML = '<p class="muted">No se pudo cargar el personaje 3D. Revisa tu conexión e inténtalo de nuevo.</p>'; return; }
+  if (!document.body.contains(cv)) return;
+  disposeLook();
+  const w = cv.clientWidth || 300, h = cv.clientHeight || 380;
+  let renderer;
+  try { renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); }
+  catch (e) { if (status) status.innerHTML = '<p class="muted">Este dispositivo no puede mostrar gráficos 3D.</p>'; return; }
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  renderer.setSize(w, h, false);
+  renderer.outputEncoding = T.sRGBEncoding;
+  const scene = new T.Scene();
+  const cam = new T.PerspectiveCamera(28, w / h, 0.1, 50);
+  cam.position.set(0, 1.75, 9.4); cam.lookAt(0, 1.6, 0);
+  scene.add(new T.HemisphereLight(0xffffff, 0x9a9aa6, 0.95));
+  const key = new T.DirectionalLight(0xffffff, 0.85); key.position.set(3, 5, 4); scene.add(key);
+  const rim = new T.DirectionalLight(0xffffff, 0.4); rim.position.set(-4, 3, -3); scene.add(rim);
+  const ch = buildCharacter(T, data.parts, S.skin || SKINS[1]);
+  scene.add(ch);
+  const shadow = new T.Mesh(new T.CircleGeometry(1.0, 48), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.13 }));
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.005; scene.add(shadow);
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  LOOK = { renderer, scene, raf: 0, rot: 0.45, auto: !reduce, lastX: null };
+  cv.onpointerdown = e => { LOOK.lastX = e.clientX; LOOK.auto = false; try { cv.setPointerCapture(e.pointerId); } catch (er) {} };
+  cv.onpointermove = e => { if (LOOK && LOOK.lastX != null) { LOOK.rot += (e.clientX - LOOK.lastX) * 0.012; LOOK.lastX = e.clientX; } };
+  cv.onpointerup = cv.onpointercancel = () => { if (LOOK) LOOK.lastX = null; };
+  const loop = () => {
+    if (!LOOK) return;
+    if (LOOK.auto) LOOK.rot += 0.008;
+    ch.rotation.y = LOOK.rot;
+    renderer.render(scene, cam);
+    LOOK.raf = requestAnimationFrame(loop);
+  };
+  loop();
+  if (status) status.hidden = true;
 }
 
 /* ---------- Ideas para una prenda (funciona aunque el clóset esté vacío) ---------- */
@@ -1022,6 +1174,7 @@ function ideaCard(g, i) {
         ? `<li class="piece">${media(p.g)}<div style="min-width:0"><b>${esc(p.g.name)}</b><small>De tu clóset · <i style="--c:${W[p.w].hex}"></i>${esc(W[p.w].name)}</small></div></li>`
         : `<li class="piece"><div class="media"><div class="bands"><span style="background:${W[p.w].hex}"></span></div></div><div style="min-width:0"><b>${esc(CAT[p.slot].noun)} ${esc(W[p.w].name)}</b><small>Aún no la tienes · <button class="linkbtn" data-action="imagine-from" data-w="${p.w}" data-cat="${p.slot}">Imaginar</button></small></div></li>`).join('')}
     </ul></div>
+    <div class="outfit-foot">${lookBtn(partsFrom([{ slot: g.category, fill: mainHex(g) }].concat(i.pieces.map(p => p.g ? { slot: p.slot, fill: mainHex(p.g) } : { slot: p.slot, fill: W[p.w].hex, idea: true }))), 'Idea N.º ' + i.combo.no, [{ hex: mainHex(g), label: g.name }].concat(i.pieces.map(p => p.g ? { hex: mainHex(p.g), label: p.g.name } : { hex: W[p.w].hex, label: CAT[p.slot].noun + ' ' + W[p.w].name + ' (idea)' })))}</div>
   </article>`;
 }
 
@@ -1030,6 +1183,7 @@ function openSheet(type, data) { S.stack.push({ type, data: data || {} }); S.arm
 function closeSheet() { S.stack.pop(); S.armed = null; renderSheet(); }
 function closeAll() { S.stack = []; S.armed = null; S.draft = null; S.imagine = null; renderSheet(); }
 function renderSheet() {
+  disposeLook();
   const sh = $('#sheet'), panel = $('#sheet-panel');
   const top = S.stack[S.stack.length - 1];
   if (!top) { if (!sh.hidden) { sh.hidden = true; panel.innerHTML = ''; } return; }
@@ -1045,6 +1199,7 @@ function renderSheet() {
   panel.scrollTop = wasHidden ? 0 : scroll;
   if (prevFocus) { const el = document.getElementById(prevFocus); if (el && panel.contains(el)) el.focus(); }
   if (top.type === 'draft' && S.draft && S.draft.step === 'cut') mountCutter();
+  if (top.type === 'look') mountLook(top.data);
 }
 function catChips(sel, action) {
   return `<div class="chips" role="group" aria-label="Tipo de prenda">${CATS.map(c => `<button class="chip" data-action="${action}" data-cat="${c.id}" aria-pressed="${sel === c.id}">${c.chip}</button>`).join('')}</div>`;
@@ -1162,6 +1317,16 @@ const SHEETS = {
         <p class="hint" style="margin:0">En el maniquí, las piezas con borde punteado son ideas que aún no tienes.</p>
         ${list.length ? `<div class="outfits">${list.map(i => ideaCard(g, i)).join('')}</div>`
           : `<div class="empty">No encontré combinaciones de Wada para este color con la tolerancia actual (ΔE ${S.T}). Puedes subirla en Combinar.</div>`}`
+    };
+  },
+  look(data) {
+    const skin = S.skin || SKINS[1];
+    return {
+      title: esc(data.title || 'Probador 3D'),
+      body: `<div class="stage"><canvas id="look3d" aria-label="Personaje 3D con el conjunto"></canvas><div class="stage-status" id="look-status">${loaderHtml('Preparando el personaje…')}</div></div>
+        <span class="hint">Arrastra para girarlo. Las piezas transparentes son ideas que aún no tienes.</span>
+        <div class="tones" role="group" aria-label="Tono de piel"><span class="eyebrow">Tono de piel</span>${SKINS.map(c => `<button class="tone" data-action="skin" data-tone="${c}" style="background:${c}" aria-pressed="${c === skin}" aria-label="Tono ${c}"></button>`).join('')}</div>
+        <div class="look-pieces">${(data.rows || []).map(r => `<span><i style="--c:${r.hex}"></i>${esc(r.label)}</span>`).join('')}</div>`
     };
   },
   pick(data) {
@@ -1508,6 +1673,8 @@ const A = {
   filter(el) { S.filter = el.dataset.f; render(); },
   'add-menu'() { S.stack = [{ type: 'add', data: {} }]; renderSheet(); },
   imagine() { S.imagine = { category: '', wada: null, name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
+  look3d(el) { const L = LOOKS[el.dataset.look]; if (L) openSheet('look', L); },
+  skin(el) { S.skin = el.dataset.tone; try { localStorage.setItem('closet-wada-skin', S.skin); } catch (e) {} renderSheet(); },
   'open-ideas'(el) { openSheet('ideas', { id: el.dataset.id }); },
   'imagine-from'(el) { S.imagine = { category: el.dataset.cat || '', wada: Number(el.dataset.w), name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
   'imagine-cat'(el) { S.imagine.category = el.dataset.cat; renderSheet(); },
