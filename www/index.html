@@ -25,6 +25,8 @@
   --danger: #d0453b;
   --shade: rgba(16, 20, 32, .45);
   --shadow: 0 2px 10px rgba(20, 28, 48, .07);
+  --mq: #d6d6d1;
+  --mq-line: rgba(20, 24, 36, .28);
   --f-display: "Nunito", "Segoe UI", system-ui, sans-serif;
   --f-body: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
   --f-mono: "Nunito Sans", "Segoe UI", system-ui, sans-serif;
@@ -34,14 +36,14 @@
   :root:not([data-theme="light"]) {
     --paper: #12151c; --surface: #1c212b; --ink: #eef0f4; --muted: #9aa2b3; --line: #2b313d;
     --accent: #38c9a0; --accent-soft: #163a31; --on-accent: #0b1a15; --danger: #f07a70; --shade: rgba(0,0,0,.6);
-    --shadow: 0 2px 12px rgba(0,0,0,.35);
+    --shadow: 0 2px 12px rgba(0,0,0,.35); --mq: #444a56; --mq-line: rgba(0, 0, 0, .45);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #12151c; --surface: #1c212b; --ink: #eef0f4; --muted: #9aa2b3; --line: #2b313d;
   --accent: #38c9a0; --accent-soft: #163a31; --on-accent: #0b1a15; --danger: #f07a70; --shade: rgba(0,0,0,.6);
-  --shadow: 0 2px 12px rgba(0,0,0,.35);
+  --shadow: 0 2px 12px rgba(0,0,0,.35); --mq: #444a56; --mq-line: rgba(0, 0, 0, .45);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -319,6 +321,13 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
   .loader-sw span { animation: hop .9s ease-in-out infinite; }
   @keyframes hop { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-12px); } 55% { transform: translateY(0) scaleY(.9); } }
 }
+
+/* Maniquí */
+.look { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 6px; align-items: center; padding: 8px 12px 0; }
+.look .pieces { padding: 4px 0 12px; }
+.mq { width: 100%; height: auto; display: block; }
+.hero-outfit .look { grid-template-columns: 120px minmax(0, 1fr); padding: 0; }
+.mq-big { max-width: 220px; margin: 0 auto; }
 </style>
 
 <div class="wrap">
@@ -855,8 +864,8 @@ function viewCloset() {
       <div class="hero-outfit">
         <div class="meta"><b>Combinación N.º ${today.combo.no}</b><span class="fit">${fitLabel(today.score)}</span></div>
         ${paletteHtml(today.combo.colors)}
-        <div class="thumbs">${today.pieces.map(g => media(g)).join('')}</div>
-        <span class="hint">${today.pieces.map(g => esc(g.name)).join(' + ')}</span>
+        <div class="look">${mannequin(partsOf(today.pieces))}<div style="display:grid;gap:10px"><div class="thumbs">${today.pieces.map(g => media(g)).join('')}</div>
+        <span class="hint">${today.pieces.map(g => esc(g.name)).join(' + ')}</span></div></div>
       </div>` : ''}
     <div class="sec-head"><h2>${title}</h2><span class="eyebrow">${list.length} ${list.length === 1 ? 'prenda' : 'prendas'}</span></div>
     ${archived.length && S.filter !== 'archived' ? `<div class="chips" style="margin-bottom:4px"><button class="chip" data-action="filter" data-f="archived" aria-pressed="false">Ver archivadas<span class="n">${archived.length}</span></button></div>` : ''}
@@ -910,7 +919,7 @@ function outfitCard(o) {
     <div class="outfit-head"><span><span class="no">N.º ${o.combo.no}</span> <span class="fit">· ${fitLabel(o.score)}</span></span>
       ${usingExamples() ? '' : `<button class="star" data-action="save-outfit" data-no="${o.combo.no}" data-ids="${esc(o.key)}" aria-pressed="${!!sv}">${sv ? 'Guardado' : 'Guardar'}</button>`}</div>
     ${paletteHtml(o.combo.colors)}
-    <ul class="pieces">${o.pieces.map(g => pieceHtml(g, o.assign)).join('')}</ul>
+    <div class="look">${mannequin(partsOf(o.pieces))}<ul class="pieces">${o.pieces.map(g => pieceHtml(g, o.assign)).join('')}</ul></div>
   </article>`;
 }
 function paletteHtml(colors) {
@@ -930,7 +939,7 @@ function savedCard(o) {
   return `<article class="outfit">
     <div class="outfit-head"><span class="no">N.º ${o.comboNo}</span><span class="fit">${worn ? 'Usado el ' + esc(worn) : 'Sin usar'}</span></div>
     ${paletteHtml(combo.colors)}
-    ${missing ? `<p class="hint" style="padding:10px 12px;margin:0">Una de las prendas ya no está en tu clóset.</p>` : `<ul class="pieces">${gs.map(g => pieceHtml(g, assign)).join('')}</ul>`}
+    ${missing ? `<p class="hint" style="padding:10px 12px;margin:0">Una de las prendas ya no está en tu clóset.</p>` : `<div class="look">${mannequin(partsOf(gs))}<ul class="pieces">${gs.map(g => pieceHtml(g, assign)).join('')}</ul></div>`}
     <div class="outfit-foot">
       ${missing ? '' : `<button class="btn small" data-action="wear" data-id="${esc(o.id)}">Lo usé hoy</button>`}
       <button class="btn small danger" data-action="unsave" data-id="${esc(o.id)}">Quitar</button>
@@ -945,6 +954,37 @@ function viewDict() {
     <div class="field" style="max-width:360px"><label for="f-dict">Buscar color</label><input type="search" id="f-dict" placeholder="Ej. Olive, Slate, Pink" value="${esc(S.dictQuery)}"></div>
     <div class="summary" style="margin-top:12px"><span class="eyebrow">${list.length} colores · ${COMBOS.length} combinaciones</span></div>
     <div class="swgrid">${list.map(w => `<button class="sw" data-action="open-color" data-w="${w.i}"><div class="chipc" style="--c:${w.hex}"></div><div class="lbl"><b>${esc(w.name)}</b><span>${w.i + 1} · ${w.hex}</span></div></button>`).join('')}</div>`;
+}
+
+/* ---------- Maniquí: viste el conjunto con el color de cada prenda ---------- */
+function mainHex(g) {
+  const c = gColors(g)[0] || (g.colors || [])[0];
+  if (!c) return '#999999';
+  return c.manual || !c.measuredHex ? W[c.wada].hex : c.measuredHex;
+}
+function partsFrom(list) {
+  const parts = {};
+  list.forEach(x => { if (x && x.slot && !parts[x.slot]) parts[x.slot] = { fill: x.fill, idea: !!x.idea }; });
+  return parts;
+}
+function partsOf(garments) { return partsFrom(garments.map(g => ({ slot: g.category, fill: mainHex(g) }))); }
+function mannequin(parts, cls) {
+  const L = 'stroke="var(--mq-line)" stroke-width="1.2" stroke-linejoin="round"';
+  const sty = k => `fill="${parts[k].fill}" ${L}${parts[k].idea ? ' fill-opacity="0.6" stroke-dasharray="4 3"' : ''}`;
+  const has = k => !!parts[k];
+  const dress = has('dress');
+  let s = `<svg class="mq ${cls || ''}" viewBox="0 0 120 300" role="img" aria-label="Maniquí con el conjunto">`;
+  // cuerpo del maniquí
+  s += `<g fill="var(--mq)" ${L}><circle cx="60" cy="26" r="15"/><rect x="54" y="39" width="12" height="13" rx="3"/>
+    <path d="M34 54Q60 46 86 54L84 140Q60 146 36 140Z"/><path d="M34 56L22 112L18 152L26 153L32 114L40 74Z"/><path d="M86 56L98 112L102 152L94 153L88 114L80 74Z"/>
+    <path d="M38 138L82 138L80 262L63 262L60 172L57 262L40 262Z"/></g>`;
+  if (!dress && has('bottom')) s += `<path ${sty('bottom')} d="M37 135L83 135L81 263L63 263L60 175L57 263L39 263Z"/>`;
+  if (dress) s += `<path ${sty('dress')} d="M33 53Q60 45 87 53L84 128L97 222Q60 230 23 222L36 128Z"/><path ${sty('dress')} d="M33 55L24 92L33 95L40 72Z"/><path ${sty('dress')} d="M87 55L96 92L87 95L80 72Z"/>`;
+  else if (has('top')) s += `<path ${sty('top')} d="M32 53Q60 44 88 53L86 143Q60 149 34 143Z"/><path ${sty('top')} d="M32 55L20 104L31 107L40 72Z"/><path ${sty('top')} d="M88 55L100 104L89 107L80 72Z"/>`;
+  if (has('shoes')) s += `<path ${sty('shoes')} d="M39 258H58V266Q58 272 52 272H35Q31 272 31 268Q31 262 39 258Z"/><path ${sty('shoes')} d="M62 258H81Q89 262 89 268Q89 272 85 272H68Q62 272 62 266Z"/>`;
+  if (has('outer')) s += `<path ${sty('outer')} d="M30 52Q44 46 56 51L51 100L49 162L31 162Z"/><path ${sty('outer')} d="M90 52Q76 46 64 51L69 100L71 162L89 162Z"/><path ${sty('outer')} d="M30 54L18 112L15 150L26 151L32 114L40 74Z"/><path ${sty('outer')} d="M90 54L102 112L105 150L94 151L88 114L80 74Z"/>`;
+  if (has('acc')) s += `<path d="M95 128Q103 108 109 130" fill="none" stroke="var(--mq-line)" stroke-width="2"/><rect ${sty('acc')} x="92" y="148" width="21" height="22" rx="4"/>`;
+  return s + `</svg>`;
 }
 
 /* ---------- Ideas para una prenda (funciona aunque el clóset esté vacío) ---------- */
@@ -975,12 +1015,13 @@ function ideaCard(g, i) {
   return `<article class="outfit">
     <div class="outfit-head"><span class="no">N.º ${i.combo.no}</span><span class="fit">${i.filled ? `Tienes ${i.filled + 1} de ${i.pieces.length + 1}` : 'Idea con colores de Wada'}</span></div>
     ${paletteHtml(i.combo.colors)}
+    <div class="look">${mannequin(partsFrom([{ slot: g.category, fill: mainHex(g) }].concat(i.pieces.map(p => p.g ? { slot: p.slot, fill: mainHex(p.g) } : { slot: p.slot, fill: W[p.w].hex, idea: true }))))}
     <ul class="pieces">
       <li class="piece">${media(g)}<div style="min-width:0"><b>${esc(g.name)}</b><small>Esta prenda · <i style="--c:${W[i.gm.w].hex}"></i>${esc(W[i.gm.w].name)}</small></div></li>
       ${i.pieces.map(p => p.g
         ? `<li class="piece">${media(p.g)}<div style="min-width:0"><b>${esc(p.g.name)}</b><small>De tu clóset · <i style="--c:${W[p.w].hex}"></i>${esc(W[p.w].name)}</small></div></li>`
         : `<li class="piece"><div class="media"><div class="bands"><span style="background:${W[p.w].hex}"></span></div></div><div style="min-width:0"><b>${esc(CAT[p.slot].noun)} ${esc(W[p.w].name)}</b><small>Aún no la tienes · <button class="linkbtn" data-action="imagine-from" data-w="${p.w}" data-cat="${p.slot}">Imaginar</button></small></div></li>`).join('')}
-    </ul>
+    </ul></div>
   </article>`;
 }
 
@@ -1118,6 +1159,7 @@ const SHEETS = {
         <p class="note" style="margin:0">${others < 3
           ? 'Todavía conozco poco tu clóset, así que te sugiero piezas por su color. Cuando subas más prendas, completaré estas ideas con tu ropa.'
           : 'Las piezas "De tu clóset" ya las tienes; las demás son ideas para imaginar o conseguir.'}</p>
+        <p class="hint" style="margin:0">En el maniquí, las piezas con borde punteado son ideas que aún no tienes.</p>
         ${list.length ? `<div class="outfits">${list.map(i => ideaCard(g, i)).join('')}</div>`
           : `<div class="empty">No encontré combinaciones de Wada para este color con la tolerancia actual (ΔE ${S.T}). Puedes subirla en Combinar.</div>`}`
     };
