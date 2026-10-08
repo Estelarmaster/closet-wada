@@ -10,7 +10,7 @@
 <title>Clóset Wada</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&family=Shippori+Mincho:wght@600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap">
 <style>
 /* Layout: app móvil familiar — saludo y buscador arriba, categorías con íconos, tarjetas redondeadas, barra inferior con botón + al centro */
 :root {
@@ -321,6 +321,55 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 }
 
 .pinbox { display: grid; gap: 6px; justify-items: start; }
+
+/* ---------- Muestrario: el color manda ---------- */
+/* Fondo neutro a propósito: no altera cómo se ven los colores de la ropa. El acento cambia con la paleta del día (lo fija el script). */
+:root { --paper: #f3f3f1; --surface: #ffffff; --ink: #1c1d21; --muted: #6a6c73; --line: #e2e2de;
+  --f-swatch: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif; --pal-strip: var(--accent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #141517; --surface: #1d1e21; --ink: #ededea; --muted: #9c9da3; --line: #2d2e32; } }
+:root[data-theme="dark"] { --paper: #141517; --surface: #1d1e21; --ink: #ededea; --muted: #9c9da3; --line: #2d2e32; }
+.hello { font-family: var(--f-swatch); font-weight: 700; }
+.swname, .palette .pal span, .colorrow .nm b, .confirm .nm b, .sw .lbl b { font-family: var(--f-swatch); font-weight: 600; }
+.linkbtn, .sec-head .linkbtn { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.tagline.ok, .step .mono { color: var(--ink); }
+.bottomnav .tab[aria-selected="true"] { color: var(--ink); }
+.bottomnav .tab::after { content: ""; width: 22px; height: 3px; border-radius: 2px; background: transparent; }
+.bottomnav .tab[aria-selected="true"]::after { background: var(--pal-strip); }
+.fab { box-shadow: 0 6px 16px rgba(0, 0, 0, .2); }
+.add-opt .ic { background: var(--accent); color: var(--on-accent); }
+/* Paleta de hoy */
+.today { display: grid; gap: 10px; margin: 6px 0 2px; }
+.today-head, .today-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.today-sw { display: flex; width: 100%; height: 156px; border: 0; padding: 0; border-radius: 18px; overflow: hidden; cursor: pointer; box-shadow: var(--shadow); }
+.today-sw span { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 2px; padding: 10px; text-align: left; }
+.today-sw b { font-family: var(--f-swatch); font-weight: 600; font-size: 14px; line-height: 1.15; overflow-wrap: anywhere; }
+.today-sw small { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.today-sw:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.today-have { display: flex; }
+.hv { flex: 1; display: flex; justify-content: center; border: 0; background: none; padding: 0; cursor: pointer; }
+.hv .media { width: 48px; aspect-ratio: 1; border-radius: 12px; box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--line); }
+.missbox { width: 48px; height: 48px; border-radius: 12px; border: 2px dashed var(--muted); display: grid; place-items: center; color: var(--muted); }
+.missbox svg { width: 20px; height: 20px; }
+.today-foot > span { font-size: 14px; color: var(--muted); }
+/* Clóset por color */
+.cbar-wrap { display: grid; gap: 6px; margin-bottom: 12px; }
+.cbar { display: flex; gap: 3px; overflow-x: auto; padding: 3px 2px; scrollbar-width: none; }
+.cbar::-webkit-scrollbar { display: none; }
+.cseg { min-width: 12px; height: 30px; border: 0; border-radius: 6px; padding: 0; cursor: pointer; box-shadow: 0 0 0 1px var(--line); }
+.cseg[aria-pressed="true"] { outline: 2.5px solid var(--ink); outline-offset: 2px; }
+.cseg:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 2px; }
+.type-chips { margin-top: 2px; }
+/* Prendas como fichas de color */
+.card.swatch { border-radius: 14px; overflow: hidden; }
+.card.swatch .media { aspect-ratio: 1; }
+.media.ico { display: grid; place-items: center; background: var(--paper); }
+.media.ico svg { width: 50%; height: 50%; }
+.chipband { display: grid; gap: 2px; padding: 8px 10px 10px; text-align: left; min-width: 0; }
+.chipband .card-name { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chipband .row2 { display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0; }
+.chipband .swname { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chipband .extra { display: inline-flex; gap: 3px; flex: none; }
+.chipband .extra i { width: 11px; height: 11px; border-radius: 3px; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .7); display: block; }
 </style>
 
 <div class="wrap">
@@ -783,8 +832,58 @@ function recentKeys() {
 }
 function savedFor(no, key) { return S.outfits.find(o => o.comboNo === no && (o.garmentIds || []).slice().sort().join(',') === key); }
 
+/* ---------- Paleta del día: define el color de la app ---------- */
+const PALETTES = COMBOS.filter(c => c.colors.length >= 3);
+function dayIndex() { const d = new Date(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); }
+function todayCombo() { return PALETTES[(dayIndex() * 37 + ((S && S.palShift) || 0)) % PALETTES.length]; }
+let PAL_NO = null;
+function applyPalette() {
+  const c = todayCombo();
+  if (PAL_NO === c.no) return;
+  PAL_NO = c.no;
+  const cols = c.colors.map(i => W[i]);
+  const chroma = w => Math.hypot(w.lab[1], w.lab[2]);
+  let pick = cols.filter(w => w.lab[0] >= 28 && w.lab[0] <= 64).sort((a, b) => chroma(b) - chroma(a))[0];
+  if (!pick) pick = cols.slice().sort((a, b) => Math.abs(a.lab[0] - 46) - Math.abs(b.lab[0] - 46))[0];
+  const r = document.documentElement.style, n = cols.length;
+  r.setProperty('--accent', pick.hex);
+  r.setProperty('--on-accent', pick.lab[0] > 62 ? '#1c1d21' : '#ffffff');
+  r.setProperty('--accent-soft', `rgba(${pick.rgb.join(', ')}, .14)`);
+  r.setProperty('--pal-strip', `linear-gradient(to right, ${cols.map((w, k) => `${w.hex} ${(k * 100 / n).toFixed(2)}% ${((k + 1) * 100 / n).toFixed(2)}%`).join(', ')})`);
+  const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = pick.hex;
+}
+function mainW(g) { const c = gColors(g)[0] || (g.colors || [])[0]; return c ? c.wada : null; }
+const PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+function paletteHero() {
+  const c = todayCombo(), p = pool();
+  const cells = c.colors.map(i => {
+    let best = null, bd = Infinity;
+    p.forEach(g => { const d = dist(g, i); if (d < bd) { bd = d; best = g; } });
+    return { i, g: bd <= S.T ? best : null };
+  });
+  const have = cells.filter(x => x.g).length;
+  return `<section class="today" aria-label="Paleta de hoy">
+    <div class="today-head"><span class="eyebrow">Paleta de hoy · N.º ${c.no}</span><button class="linkbtn" data-action="next-palette">Ver otra</button></div>
+    <button class="today-sw" data-action="open-combo" data-no="${c.no}" aria-label="Abrir la combinación ${c.no}">${c.colors.map(i => `<span style="background:${W[i].hex};color:${textOn(W[i])}"><b>${esc(W[i].name)}</b><small>${i + 1}</small></span>`).join('')}</button>
+    <div class="today-have">${cells.map(x => x.g
+      ? `<button class="hv" data-action="open-garment" data-id="${esc(x.g.id)}" aria-label="${esc(x.g.name)}">${media(x.g)}</button>`
+      : `<button class="hv" data-action="imagine-from" data-w="${x.i}" aria-label="Imaginar una prenda ${esc(W[x.i].name)}"><span class="missbox">${PLUS_SVG}</span></button>`).join('')}</div>
+    <div class="today-foot"><span>${have === c.colors.length ? 'Tienes todos los colores' : `Tienes ${have} de ${c.colors.length} colores`}</span><button class="btn primary small" data-action="open-combo" data-no="${c.no}">Vístete con ella</button></div>
+  </section>`;
+}
+function colorBar(active) {
+  const groups = new Map();
+  active.forEach(g => { const w = mainW(g); if (w != null) groups.set(w, (groups.get(w) || 0) + 1); });
+  if (!groups.size) return '';
+  const ws = [...groups.keys()].sort((a, b) => a - b), sel = S.colorF, n = sel != null ? groups.get(sel) : 0;
+  return `<div class="cbar-wrap"><span class="eyebrow">Tu clóset por color</span>
+    <div class="cbar" role="group" aria-label="Filtrar por color">${ws.map(w => `<button class="cseg" data-action="color-filter" data-w="${w}" aria-pressed="${sel === w}" style="flex:${groups.get(w)};background:${W[w].hex}" title="${esc(W[w].name)}" aria-label="${esc(W[w].name)}, ${groups.get(w)} ${groups.get(w) === 1 ? 'prenda' : 'prendas'}"></button>`).join('')}</div>
+    <span class="hint">${sel != null ? `<b class="swname">${esc(W[sel].name)}</b> · ${n} ${n === 1 ? 'prenda' : 'prendas'} · <button class="linkbtn" data-action="color-filter" data-w="${sel}">Quitar filtro</button>` : 'Toca un color para ver solo esas prendas. El ancho es cuántas tienes de cada uno.'}</span></div>`;
+}
+function catIconFill(id, hex) { return `<svg viewBox="0 0 24 24" fill="${hex}" stroke="var(--ink)" stroke-width="1.1" stroke-linejoin="round" aria-hidden="true">${CAT_ICON[id]}</svg>`; }
+
 /* ---------- Animación de carga ---------- */
-const LOADER_COMBO = (() => { const four = COMBOS.filter(c => c.colors.length === 4); return four[Math.floor(Math.random() * four.length)]; })();
+const LOADER_COMBO = todayCombo();
 function loaderHtml(text) {
   return `<div class="loader" role="status"><div class="loader-sw" aria-hidden="true">${LOADER_COMBO.colors.map((i, k) => `<span style="background:${W[i].hex};animation-delay:${(k * 0.12).toFixed(2)}s"></span>`).join('')}</div><p>${esc(text)}</p><small>Combinación N.º ${LOADER_COMBO.no}</small></div>`;
 }
@@ -797,12 +896,14 @@ function hideSplash() {
 
 /* ---------- Render ---------- */
 function render() {
+  applyPalette();
   if (S.loaded) hideSplash();
   const st = $('#status');
   st.dataset.mode = S.mode;
   st.textContent = { loading: 'Conectando…', cloud: 'Guardado en tu cuenta', local: IN_APP ? 'Guardado en este celular' : 'Solo en este navegador', error: 'Sin conexión con la base de datos' }[S.mode];
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === S.tab)));
   const hello = $('#hello'); if (hello) hello.textContent = S.uname ? 'Hola, ' + S.uname : 'Hola';
+  const hs = $('#hello-sub'); if (hs) hs.textContent = '¿Qué te pones hoy? · ' + new Date().toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' });
   const v = $('#view');
   const focusId = document.activeElement && document.activeElement.id;
   if (S.tab === 'closet') v.innerHTML = viewCloset();
@@ -842,28 +943,24 @@ function viewCloset() {
   const archived = all.filter(g => g.archived);
   const active = all.filter(g => !g.archived);
   const q = (S.query || '').trim().toLowerCase();
+  if (S.colorF != null && !active.some(g => mainW(g) === S.colorF)) S.colorF = null;
   let list = S.filter === 'archived' ? archived : active.filter(g => S.filter === 'all' || g.category === S.filter);
+  if (S.colorF != null && S.filter !== 'archived') list = list.filter(g => mainW(g) === S.colorF);
   list = list.filter(g => matchQuery(g, q)).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const counts = {}; active.forEach(g => { counts[g.category] = (counts[g.category] || 0) + 1; });
-  const today = !q && S.filter === 'all' ? suggest(pool(), { T: S.T, recent: recentKeys(), limit: 1 })[0] : null;
-  const title = S.filter === 'archived' ? 'Archivadas' : S.filter === 'all' ? 'Tus prendas' : CAT[S.filter].chip;
-  return `<div class="searchbar">${SEARCH_SVG}<input type="search" id="f-search" placeholder="Busca por prenda o color" value="${esc(S.query || '')}" aria-label="Buscar en tu clóset"></div>
+  const title = S.filter === 'archived' ? 'Archivadas' : 'Tu clóset';
+  return `${paletteHero()}
     ${usingExamples() ? `<p class="note"><b>Este es un clóset de ejemplo.</b> Toca el botón + para registrar tu primera prenda y verás las tuyas.</p>` : ''}
     ${S.mode === 'local' && !IN_APP ? `<p class="note">Estás fuera de tu cuenta: las prendas se guardan solo en este navegador.</p>` : ''}
-    <div class="cats" role="group" aria-label="Categorías">
-      ${CATS.map(c => `<button class="cat" data-action="filter" data-f="${S.filter === c.id ? 'all' : c.id}" aria-pressed="${S.filter === c.id}"><span class="ic">${catIcon(c.id)}</span>${c.chip}<span class="n">${counts[c.id] || 0}</span></button>`).join('')}
-    </div>
-    ${today ? `<div class="sec-head"><h2>Outfit del día</h2><button class="linkbtn" data-action="tab" data-tab="combine">Ver más</button></div>
-      <div class="hero-outfit">
-        <div class="meta"><b>Combinación N.º ${today.combo.no}</b><span class="fit">${fitLabel(today.score)}</span></div>
-        ${paletteHtml(today.combo.colors)}
-        <div class="thumbs">${today.pieces.map(g => media(g)).join('')}</div>
-        <span class="hint">${today.pieces.map(g => esc(g.name)).join(' + ')}</span>
-      </div>` : ''}
     <div class="sec-head"><h2>${title}</h2><span class="eyebrow">${list.length} ${list.length === 1 ? 'prenda' : 'prendas'}</span></div>
-    ${archived.length && S.filter !== 'archived' ? `<div class="chips" style="margin-bottom:4px"><button class="chip" data-action="filter" data-f="archived" aria-pressed="false">Ver archivadas<span class="n">${archived.length}</span></button></div>` : ''}
-    ${S.filter === 'archived' ? `<div class="chips" style="margin-bottom:4px"><button class="chip" data-action="filter" data-f="all" aria-pressed="false">Volver a todas</button></div>` : ''}
-    ${list.length ? `<div class="grid">${list.map(card).join('')}</div>` : `<div class="empty" style="margin-top:12px">${q ? 'No encontré prendas con esa búsqueda.' : 'No hay prendas en esta categoría.'}</div>`}`;
+    ${S.filter !== 'archived' ? colorBar(active) : ''}
+    <div class="searchbar">${SEARCH_SVG}<input type="search" id="f-search" placeholder="Busca por prenda o color" value="${esc(S.query || '')}" aria-label="Buscar en tu clóset"></div>
+    <div class="chips type-chips" role="group" aria-label="Tipo de prenda">
+      ${S.filter === 'archived'
+        ? `<button class="chip" data-action="filter" data-f="all" aria-pressed="false">Volver a todas</button>`
+        : `<button class="chip" data-action="filter" data-f="all" aria-pressed="${S.filter === 'all'}">Todas<span class="n">${active.length}</span></button>${CATS.filter(c => counts[c.id]).map(c => `<button class="chip" data-action="filter" data-f="${c.id}" aria-pressed="${S.filter === c.id}">${c.chip}<span class="n">${counts[c.id]}</span></button>`).join('')}${archived.length ? `<button class="chip" data-action="filter" data-f="archived" aria-pressed="false">Archivadas<span class="n">${archived.length}</span></button>` : ''}`}
+    </div>
+    ${list.length ? `<div class="grid">${list.map(card).join('')}</div>` : `<div class="empty" style="margin-top:12px">${q ? 'No encontré prendas con esa búsqueda.' : 'No hay prendas con este filtro.'}</div>`}`;
 }
 function viewSaved() {
   if (!S.loaded) return loaderHtml('Cargando…');
@@ -872,12 +969,14 @@ function viewSaved() {
     ${saved.length ? `<div class="outfits">${saved.map(savedCard).join('')}</div>` : `<div class="empty">Todavía no guardas outfits. En Combinar, toca Guardar en los que te gusten.</div>`}`;
 }
 function card(g) {
-  return `<button class="card" data-action="open-garment" data-id="${esc(g.id)}">
-    ${media(g, true)}
-    <span class="card-body">
+  const wi = mainW(g), w = wi != null ? W[wi] : null, src = gSrc(g);
+  const tag = g.imagined ? `<span class="tag">${g.example ? 'Ejemplo' : 'Imaginada'}</span>` : '';
+  const top = src ? media(g, true) : `<div class="media ico">${catIconFill(g.category, w ? w.hex : 'none')}${tag}</div>`;
+  return `<button class="card swatch" data-action="open-garment" data-id="${esc(g.id)}">
+    ${top}
+    <span class="chipband" style="background:${w ? w.hex : 'var(--line)'};color:${w ? textOn(w) : 'var(--ink)'}">
       <span class="card-name">${esc(g.name)}</span>
-      <span class="card-meta"><span>${esc(CAT[g.category] ? CAT[g.category].chip : '')}${g.neutral ? ' · neutro' : ''}</span>
-      <span class="dots">${gColors(g).map(c => `<i style="--c:${W[c.wada].hex}" title="${esc(W[c.wada].name)}"></i>`).join('')}</span></span>
+      <span class="row2"><span class="swname">${w ? esc(w.name) + ' · ' + (w.i + 1) : ''}</span><span class="extra">${gColors(g).slice(1).map(c => `<i style="background:${W[c.wada].hex}"></i>`).join('')}</span></span>
     </span>
   </button>`;
 }
@@ -1493,6 +1592,8 @@ const A = {
   filter(el) { S.filter = el.dataset.f; render(); },
   'add-menu'() { S.stack = [{ type: 'add', data: {} }]; renderSheet(); },
   imagine() { S.imagine = { category: '', wada: null, name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
+  'next-palette'() { S.palShift = (S.palShift || 0) + 1; render(); },
+  'color-filter'(el) { const w = Number(el.dataset.w); S.colorF = S.colorF === w ? null : w; render(); },
   'open-ideas'(el) { openSheet('ideas', { id: el.dataset.id }); },
   'imagine-from'(el) { S.imagine = { category: el.dataset.cat || '', wada: Number(el.dataset.w), name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
   'imagine-cat'(el) { S.imagine.category = el.dataset.cat; renderSheet(); },
