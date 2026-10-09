@@ -511,11 +511,11 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .dr-row { height: clamp(80px, calc(var(--h) * 1vh), calc(var(--h) * 8.4px)); container-type: inline-size; }
 .dr-row.dr-enter { animation: drIn .5s cubic-bezier(.2, .8, .25, 1) both; animation-delay: calc(var(--i) * 90ms); }
 @keyframes drIn { from { transform: translateX(60%); opacity: 0; } }
-.dr-track { position: relative; height: 100%; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; padding-inline: 21cqw; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
+.dr-track { position: relative; height: 100%; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; padding-inline: 17cqw; overscroll-behavior-x: contain; touch-action: pan-x pan-y; }
 .dr-track::-webkit-scrollbar { display: none; }
 .dr-track.drag { scroll-snap-type: none; cursor: grabbing; }
 .dr-track:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
-.dr-item { flex: 0 0 58cqw; height: 100%; scroll-snap-align: center; border: 0; background: none; padding: 4px 5%; display: grid; place-items: center; opacity: .4; transform: scale(.84); transition: opacity .25s, transform .25s; cursor: pointer; min-width: 0; }
+.dr-item { flex: 0 0 66cqw; height: 100%; scroll-snap-align: center; border: 0; background: none; padding: 6px 3%; display: block; opacity: .55; transform: scale(.86); transition: opacity .25s, transform .25s; cursor: pointer; min-width: 0; }
 .dr-item.cur { opacity: 1; transform: none; }
 .dr-item svg, .dr-item img { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 8px 8px rgba(0, 0, 0, .14)); -webkit-user-drag: none; pointer-events: none; }
 .dr-item.photo:not(.cut) img { object-fit: cover; border-radius: 14px; filter: none; box-shadow: 0 6px 14px rgba(0, 0, 0, .14); }
@@ -1660,7 +1660,7 @@ document.addEventListener('pointercancel', () => { PSW = null; });
 
 
 /* ---------- Probador: una fila por tipo de prenda ---------- */
-const DR_ROWS = { outer: { label: 'Saco', h: 21, noun: 'un saco' }, top: { label: 'Arriba', h: 25, noun: 'una prenda de arriba' }, bottom: { label: 'Abajo', h: 28, noun: 'una prenda de abajo' }, shoes: { label: 'Zapatos', h: 12, noun: 'zapatos' }, acc: { label: 'Accesorio', h: 11, noun: 'un accesorio' } };
+const DR_ROWS = { outer: { label: 'Saco', h: 21, noun: 'un saco' }, top: { label: 'Arriba', h: 27, noun: 'una prenda de arriba' }, bottom: { label: 'Abajo', h: 30, noun: 'una prenda de abajo' }, shoes: { label: 'Zapatos', h: 12, noun: 'zapatos' }, acc: { label: 'Accesorio', h: 11, noun: 'un accesorio' } };
 const MAGIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v6M4 7h6M16 3l1.6 4.4L22 9l-4.4 1.6L16 15l-1.6-4.4L10 9l4.4-1.6z"/><path d="M8 14l1 2.6 2.6 1-2.6 1L8 21l-1-2.4-2.6-1 2.6-1z"/></svg>';
 function drRowOf(g) { return g.category === 'dress' ? 'top' : (DR_ROWS[g.category] ? g.category : 'acc'); }
 function hueKey(g) {
@@ -1700,7 +1700,7 @@ function matchMix(pieces) {
 }
 function drVisual(g) {
   if (showsFlat(g)) return flatSvg(g, null, true);
-  return `<img src="${esc(gSrc(g))}" alt="" draggable="false"${g.assetId && g.thumb ? ` data-fb="${esc(g.thumb)}"` : ''}>`;
+  return `<img src="${esc(gSrc(g))}" alt="" draggable="false" decoding="async"${g.assetId && g.thumb ? ` data-fb="${esc(g.thumb)}"` : ''}>`;
 }
 function drRowHtml(k, i) {
   const items = drItems(k), R = DR_ROWS[k];
