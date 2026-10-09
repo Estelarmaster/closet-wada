@@ -1076,6 +1076,8 @@ function flatColors(g) {
   const cs = (g.colors || []).filter(c => !c.off).slice().sort((a, b) => b.weight - a.weight);
   return cs.length ? cs.map(c => ({ hex: W[c.wada] ? W[c.wada].hex : c.hex, w: Math.max(c.weight, .08), lab: W[c.wada] ? W[c.wada].lab : c.lab })) : [{ hex: '#c9ccd3', w: 1, lab: [80, 0, 0] }];
 }
+// Primero la ropa que se ve con su foto real; después las planchadas y las imaginadas
+function realRank(g) { return showsFlat(g) ? 1 : 0; }
 function suggestLook(g) {
   const cs = flatColors(g);
   return { mode: 'flat', shape: (SHAPE_BY_CAT[g.category] || SHAPE_BY_CAT.top)[0], pattern: cs.length > 1 && cs[1].w >= .2 ? 'rayas-h' : 'liso' };
@@ -1286,7 +1288,7 @@ function viewCloset() {
   if (S.colorF != null && !active.some(g => mainW(g) === S.colorF)) S.colorF = null;
   let list = S.filter === 'archived' ? archived : active.filter(g => S.filter === 'all' || g.category === S.filter);
   if (S.colorF != null && S.filter !== 'archived') list = list.filter(g => mainW(g) === S.colorF);
-  list = list.filter(g => matchQuery(g, q)).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  list = list.filter(g => matchQuery(g, q)).sort((a, b) => realRank(a) - realRank(b) || (b.createdAt || 0) - (a.createdAt || 0));
   const counts = {}; active.forEach(g => { counts[g.category] = (counts[g.category] || 0) + 1; });
   const title = S.filter === 'archived' ? 'Archivadas' : 'Tu clóset';
   return `${paletteHero()}
@@ -1668,7 +1670,7 @@ function hueKey(g) {
   let h = Math.atan2(b, a) * 180 / Math.PI; if (h < 0) h += 360; return h;
 }
 function drItems(k) {
-  return pool().filter(g => drRowOf(g) === k).sort((a, b) => hueKey(a) - hueKey(b));
+  return pool().filter(g => drRowOf(g) === k).sort((a, b) => realRank(a) - realRank(b) || hueKey(a) - hueKey(b));
 }
 function drRowsOn() {
   const top = findG(S.dr.sel.top), isDress = top && top.category === 'dress';
@@ -1914,7 +1916,7 @@ const SHEETS = {
         <input type="range" id="f-tol" min="8" max="30" step="1" value="${S.T}" aria-describedby="f-tol-h">
         <div class="adj-scale"><span>Muy fiel</span><span>Más opciones</span></div>
         <span class="hint" id="f-tol-h"><span id="f-tol-n">${(S.pasRes || []).length}</span> outfits con este ajuste.</span></div>
-      <div class="field"><span class="eyebrow">Mostrar mis prendas</span><div class="chips" role="group" aria-label="Mostrar mis prendas">${lp('auto', 'Como elegí en cada una')}${lp('flat', 'Todas planchadas')}${lp('photo', 'Todas en foto')}</div>
+      <div class="field"><span class="eyebrow">Mostrar mis prendas</span><div class="chips" role="group" aria-label="Mostrar mis prendas">${lp('auto', 'Como elegí en cada una')}${lp('photo', 'Todas en foto')}${lp('flat', 'Todas planchadas')}</div>
         <span class="hint">Las prendas sin foto siempre se ven planchadas.</span></div>
       <div class="field"><span class="eyebrow">Clóset de prueba</span><div class="row"><button class="btn small${S.demo ? ' primary' : ''}" data-action="${S.demo ? 'demo-off' : 'demo-on'}">${S.demo ? 'Salir del clóset de prueba' : 'Usar clóset de prueba con fotos reales'}</button></div>
         <span class="hint">Más de 50 prendas reales fotografiadas en casa, para ver cómo se ve la app con ropa de verdad. Tu clóset no cambia.</span></div>` };
@@ -2401,7 +2403,7 @@ const A = {
   'to-look'() {
     const d = S.draft; if (!d) return;
     const shapes = SHAPE_BY_CAT[d.category] || SHAPE_BY_CAT.top;
-    if (!d.look) d.look = suggestLook({ category: d.category, colors: d.colors });
+    if (!d.look) d.look = Object.assign(suggestLook({ category: d.category, colors: d.colors }), { mode: 'photo' });
     if (!shapes.includes(d.look.shape)) d.look.shape = shapes[0];
     d.step = 'look'; renderSheet();
     const pn = $('#sheet-panel'); if (pn) pn.scrollTop = 0;
