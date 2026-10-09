@@ -370,6 +370,42 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .chipband .swname { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chipband .extra { display: inline-flex; gap: 3px; flex: none; }
 .chipband .extra i { width: 11px; height: 11px; border-radius: 3px; box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .7); display: block; }
+
+/* ---------- Franjas de color desplegables ---------- */
+.bands-list { margin-inline: -16px; display: grid; }
+.band { position: relative; overflow: hidden; background: var(--bg); color: var(--ink); height: 72px; transition: height .45s cubic-bezier(.3, .7, .2, 1); cursor: pointer; text-align: left; }
+.band.open { height: 360px; cursor: default; }
+.band:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
+.band-head { position: absolute; left: 20px; right: 20px; top: 0; height: 72px; display: flex; flex-direction: column; justify-content: center; transition: top .45s cubic-bezier(.3, .7, .2, 1); }
+.band.open .band-head { top: 18px; height: auto; }
+.band-k { font-family: var(--f-body); font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; height: 0; opacity: 0; overflow: hidden; transition: opacity .3s, height .3s; }
+.band.open .band-k { height: 16px; opacity: 1; }
+.band-name { font-family: var(--f-display); font-weight: 800; font-size: 22px; line-height: 1.1; letter-spacing: -.01em; transition: font-size .45s cubic-bezier(.3, .7, .2, 1); overflow-wrap: anywhere; padding-right: 48px; }
+.band.open .band-name { font-size: 34px; }
+.band-body { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.band.open .band-body { opacity: 1; pointer-events: auto; transition: opacity .35s .15s; }
+.specs { position: absolute; right: 20px; top: 112px; margin: 0; display: grid; gap: 10px; text-align: right; font-family: var(--f-display); }
+.specs dt { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; font-family: var(--f-body); }
+.specs dd { margin: 0; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.vlabel { position: absolute; left: 20px; bottom: 74px; transform: rotate(-90deg); transform-origin: left bottom; font-family: var(--f-body); font-size: 10.5px; font-weight: 700; letter-spacing: .32em; white-space: nowrap; }
+.band-actions { position: absolute; left: 20px; right: 20px; bottom: 18px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.band-btn { border: 2px solid currentColor; background: transparent; color: inherit; border-radius: 999px; padding: 6px 12px; font-family: var(--f-body); font-weight: 700; font-size: 13px; cursor: pointer; }
+.band-note { font-size: 12.5px; font-weight: 600; }
+.pin-ico { width: 40px; height: 40px; border-radius: 50%; background: #ffffff; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0, 0, 0, .18); flex: none; }
+.pin-ico svg { width: 36px; height: 36px; display: block; }
+.pin-ico:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.band .pin-ico { position: absolute; right: 16px; top: 16px; }
+.acc { position: relative; height: 500px; display: flex; flex-direction: column; border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); }
+.acc .band { height: auto; flex: 1 1 0; min-height: 56px; transition: flex-grow .5s cubic-bezier(.3, .7, .2, 1); }
+.acc .band.open { flex-grow: 5; height: auto; }
+.acc .band-head { height: 56px; }
+.acc .band-name { font-size: 19px; }
+.acc .band.open .band-name { font-size: 30px; }
+.acc .specs { top: 96px; gap: 8px; }
+.acc .vlabel { bottom: 22px; }
+.acc .band-body .band-actions { display: none; }
+.dict-tools { display: flex; gap: 10px; align-items: end; margin-bottom: 14px; }
+@media (prefers-reduced-motion: reduce) { .band, .band-head, .band-name, .band-body, .acc .band { transition: none !important; } }
 </style>
 
 <div class="wrap">
@@ -403,7 +439,7 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 
 <script>
 /*CORE-START*/
-const RAW = [["Hermosa Pink","f9c1ce",[176,227,273]],["Corinthian Pink","f8b6ba",[27,43,87,97,128,169,174,206,246,254,264,342]],["Cameo Pink","e0b3b6",[101,105,116,120,165,231]],["Fawn","d1b0a7",[18,125,308]],["Light Brown Drab","b59392",[35,68,185,191,223,239,244,268,285,321]],["Coral Red","f58e84",[92,123,320,332]],["Fresh Color","f6917e",[240]],["Grenadine Pink","f48067",[6,21,112,166,193,201,230,300,315,341]],["Eosine Pink","f37f94",[34,59,90,108,134,153,197,242,248,276,287,314,327,336]],["Spinel Red","f27291",[14,147,165,184,195,224,277]],["Old Rose","d46d7a",[55,162,260,265]],["Eugenia Red | A","e2625e",[284]],["Eugenia Red | B","da525d",[17,77,252,262,270,280,282,325]],["Raw Sienna","bb7125",[3,13,33,70,86,130,131,182,243,247,252,255,268,269,279,293,298,319,327]],["Vinaceous Tawny","c56127",[40,85,244]],["Jasper Red","eb5324",[155,194,216,219]],["Spectrum Red","e31f26",[257,266,301,322]],["Red Orange","dd4027",[31,164,179,241,264]],["Etruscan Red","c55347",[25,47,97,137,152,185,275]],["Burnt Sienna","ae5224",[198,242,263,285,286,297,312,333,343]],["Ochre Red","ab544d",[199,283]],["Scarlet","cb2f43",[136,308,332]],["Carmine","cc1236",[39,117,122,154,225,232,307,313]],["Indian Lake","c53c69",[299,331]],["Rosolanc Purple","b73f74",[48,144,170,204,277,346]],["Pomegranite Purple","b71f57",[220,271]],["Hydrangea Red","a94151",[142]],["Brick Red","a84222",[37,108,246,322,328]],["Carmine Red","a62c37",[35,51,104,130,181,200,221,228,233,237,245,338]],["Pompeian Red","ab2439",[30,71,120,212,311,324]],["Red","a72144",[251,261]],["Brown","7c4226",[110,121,145,161]],["Hay's Russet","793327",[58,82,95,152,186,231,249,304,314,336,345]],["Vandyke Red","82241f",[16,133,147,316,335]],["Pansy Purple","7d133a",[157,273]],["Pale Burnt Lake","802626",[124,171,177,205,217,258,269,283]],["Violet Red","642d5e",[9]],["Vistoris Lake","6d4145",[63,91,165,226,290,337]],["Sulpher Yellow","f5ecc2",[52,72,80,104,132,135,151,208,246,254,270,294,296,310,315,320,321,326]],["Pale Lemon Yellow","ffefae",[3,31,60,76,99,109,111,169,185,195,203,228,241,261,272,281,290,292,336]],["Naples Yellow","fbe6a0",[14,115,166,193,303,325]],["Ivory Buff","ebd3a2",[11,50,94,102,126,178,184,190,209,214,235,243,262,266,301,343]],["Seashell Pink","fdd4bd",[45,84,88,113,150,176,194,276,334]],["Light Pinkish Cinnamon","fcc79b",[317]],["Pinkish Cinnamon","eeb480",[78,161,175,232,258,263,292,305,310]],["Cinnamon Buff","fdc57e",[23,127,137,180,210,234,246,323,344]],["Cream Yellow","fdbf68",[122,192,215,226,267,278,294,295,300,302,304,311,329,342]],["Golden Yellow","f3a257",[26,81,132,138,140,179,206,229,309,315]],["Vinaceous Cinnamon","eea78c",[203,205,213,256,260,279,299]],["Ochraceous Salmon","d8a37b",[32,71,121,186,217,220,223,238,296,339]],["Isabella Color","c5a56e",[4,12,241,292]],["Maple","c59f6b",[282]],["Olive Buff","c1c494",[83,175,200,330,348]],["Ecru","c2ae93",[167,249,275,279,292,302,317,327]],["Yellow","fff200",[22,62,68,154,240,251,295,313]],["Lemon Yellow","f8ed43",[45,123,138,158,168,173,189,210,253,259,289,298,306,317,333]],["Apricot Yellow","ffdd00",[107,129,163,198,213,247,265,284,305,319]],["Pyrite Yellow","cab356",[239,250,255,287]],["Olive Ocher","d6b43e",[66,148,149,156,157,249,278]],["Yellow Ocher","e2b540",[42,96,118,124,126,191,222,325]],["Orange Yellow","fcb315",[114,148,153,164,170,257,286,338]],["Yellow Orange","f99d1b",[2,53,89,151,171,209,222,235,267,288,297,312,319,335]],["Apricot Orange","f68c50",[211,253,309,328]],["Orange","f37420",[7,46,141,144,149,256,272]],["Peach Red","f15a30",[115,250,274,285,298,303,326,340]],["English Red","d96629",[1,131,190,308,339]],["Cinnamon Rufous","c27544",[8,10,103,158,172,204,206]],["Orange Rufous","c16b27",[91,102,222]],["Sulphine Yellow","c19f2c",[36,65,142,160,252]],["Khaki","bc892b",[129,146,159,236,248]],["Citron Yellow","b2b73e",[40,87,145,150,153,196,305,323]],["Citrine","b09f36",[59,93,132,133,262]],["Buffy Citrine","96874d",[100,177,233]],["Dark Citrine","8b835b",[10,41,274,304]],["Light Grayish Olive","848061",[107,184]],["Krongbergs Green","84875e",[29]],["Olive","837e31",[96,201,254,258,277,310,334]],["Orange Citrine","986f2d",[212,342]],["Sudan Brown","a36752",[207,214,273]],["Olive Green","6b7140",[66,243,270,297]],["Light Brownish Olive","806e4b",[199,318]],["Deep Grayish Olive","635a3a",[146,343]],["Pale Raw Umber","71502f",[26,73,160,234,296]],["Sepia","644b1e",[24,288]],["Madder Brown","762c19",[28,79,98,173,237,275,323]],["Mars Brown Tobacco","653514",[19]],["Vandyke Brown","4b3317",[110,113,118,182,192,328]],["Turquoise Green","b5decc",[36,74,147,163,173,202,223,230,263,272,285,293,300,305,317,346]],["Glaucous Green","b4cdc2",[7,150,171,207,239,260]],["Dark Greenish Glaucous","b7c2a9",[264,311]],["Yellow Green","afd472",[111,141,276,326,334]],["Light Green Yellow","c7d14f",[61,289,291,311,346]],["Night Green","87c540",[19,32,158,326]],["Olive Yellow","a6a159",[124,211,265,347]],["Artemesia Green","709390",[293,312]],["Andover Green","6d7e77",[244,346]],["Rainette Green","8fa071",[73,162,188,266,301]],["Chromium Green","719470",[105,200,219,283]],["Pistachio Green","648f7b",[127,137]],["Sea Green","00b49b",[17,21,58,86,133,250,260,284,291,340,347]],["Benzol Green","00978d",[15,54,92,122,155,247,266,267,281,304,306]],["Light Porcelain Green","00908a",[44,193,328]],["Green","489b6e",[198,216,293]],["Dull Viridian Green","009465",[136,256,306,316]],["Oil Green","819238",[245,299,320]],["Diamine Green","1a7444",[38,146,217,242,251,313]],["Cossack Green","437742",[5,135,262,270,278,294,319,341,348]],["Lincoln Green","555832",[70,121,203,210,280,290]],["Blackish Olive","42533e",[109,318,336]],["Deep Slate Olive","253122",[189,229,268,303,310,321,332,341,342,348]],["Nile Blue","bce4e5",[25,250,268,302,306,330,345]],["Pale King's Blue","a7d4e4",[16,49,72,75,167,196,213,234,287]],["Light Glaucous Blue","a5c8d1",[54,93,119,152,178,204,227,320,339,341]],["Salvia Blue","97acc8",[29,129,135,139,142,188,209,212,237,272,294,321,330]],["Cobalt Green","96d1aa",[156,188,201,202,230,271,281,282,290,291,308,333]],["Calamine BLue","78cdd0",[20,41,65,159,176,255,261,287,291,300]],["Venice Green","62c6bf",[78,128,138,189,283,345]],["Cerulian Blue","0093a5",[1,63,99,125,148,227,240,264]],["Peacock Blue","00939b",[131,286]],["Green Blue","099197",[12,74,79,178,208,252,259,271,330]],["Olympic Blue","5a82b3",[44,67,157,194,231,274,324]],["Blue","006eb8",[49,51,88,143,154,186,191,215,257,267,295,333]],["Antwarp Blue","007190",[85,106,114,140,163,172,208,244,258,281,299,302,334]],["Helvetia Blue","005b8d",[39,48,161,187,218,259,312,347]],["Dark Medici Blue","547076",[160,224,241,249]],["Dusky Green","004f46",[94,219,225,278,284,318,332,338]],["Deep Lyons Blue","1c4286",[22,38,101,126,179,199,236,247,314,344]],["Violet Blue","40456a",[75,83,89,98,125,233,286,289,297,309,339]],["Vandar Poel's Blue","064f6e",[5,77,151,167,168,309,343]],["Dark Tyrian Blue","12354e",[2,60,67,119,141,245,279]],["Dull Violet Black","1e0e3f",[95,106,145,265,277,289,295,331]],["Deep Indigo","051230",[6,28,139,155,182,211,232]],["Deep Slate Green","112f2c",[84,149,166,271,318,325]],["Grayish Lavender - A","b5b1d8",[8,15,159,177,218,248,307]],["Grayish Lavender - B","c0a9b3",[47,56,174,187,235,327,329,338]],["Laelia Pink","ca92a8",[20,254,280,337]],["Lilac","b984af",[143,162,282,347]],["Eupatorium Purple","bf5892",[215,315,322]],["Light Mauve","9a72aa",[23,80,128,134,180,274,331]],["Aconite Violet","a36aa5",[43,64,90,187,220,257,269,301,307,324,344]],["Dull Blue Violet","80719e",[9,100]],["Dark Soft Violet","66629c",[64,127,197]],["Blue Violet","6450a1",[116,175,196,322,345]],["Purple Drab","84565b",[236]],["Deep Violet / Plumbeous","70727c",[183,192,218]],["Veronia Purple","8c4c62",[13,24,168,183]],["Dark Slate Purple","704357",[225,248]],["Taupe Brown","7a4456",[57,123,174,224,275,280,288]],["Violet Carmine","713b4c",[337]],["Violet","4f4086",[42,56,130,156,164,181,205,214,226,316,331,335]],["Red Violet","59256a",[4,37,134,136,170,172,183,316]],["Cotinga Purple","501345",[61,181,238,253,307,329,348]],["Dusky Madder Violet","4e1d4c",[18,50,53,82,103,314]],["White","ffffff",[55]],["Neutral Gray","b6bfc1",[34,139,180,195,197,221,228,229,273,303,324,340]],["Mineral Gray","a2b0ad",[11,30]],["Warm Gray","a1a39a",[69,76,81,143,169,238,259,261]],["Slate Color","34454c",[27,33,57,140,202,243,245,251,253,263,296,329,335]],["Black","111314",[46,52,62,69,112,117,144,190,207,216,221,242,255,256,269,276,288,298,313,323,337,340,344]]];
+const RAW = [["Hermosa Pink","f9c1ce",[176,227,273],[0,30,6,0]],["Corinthian Pink","f8b6ba",[27,43,87,97,128,169,174,206,246,254,264,342],[0,35,15,0]],["Cameo Pink","e0b3b6",[101,105,116,120,165,231],[10,32,19,0]],["Fawn","d1b0a7",[18,125,308],[18,31,30,0]],["Light Brown Drab","b59392",[35,68,185,191,223,239,244,268,285,321],[8,30,20,25]],["Coral Red","f58e84",[92,123,320,332],[0,55,40,0]],["Fresh Color","f6917e",[240],[0,53,45,0]],["Grenadine Pink","f48067",[6,21,112,166,193,201,230,300,315,341],[0,62,58,0]],["Eosine Pink","f37f94",[34,59,90,108,134,153,197,242,248,276,287,314,327,336],[0,63,23,0]],["Spinel Red","f27291",[14,147,165,184,195,224,277],[0,70,21,0]],["Old Rose","d46d7a",[55,162,260,265],[15,70,40,0]],["Eugenia Red | A","e2625e",[284],[7,76,60,0]],["Eugenia Red | B","da525d",[17,77,252,262,270,280,282,325],[0,80,50,10]],["Raw Sienna","bb7125",[3,13,33,70,86,130,131,182,243,247,252,255,268,269,279,293,298,319,327],[18,58,100,12]],["Vinaceous Tawny","c56127",[40,85,244],[17,72,100,6]],["Jasper Red","eb5324",[155,194,216,219],[2,83,100,0]],["Spectrum Red","e31f26",[257,266,301,322],[5,100,100,0]],["Red Orange","dd4027",[31,164,179,241,264],[9,90,100,0]],["Etruscan Red","c55347",[25,47,97,137,152,185,275],[16,80,74,6]],["Burnt Sienna","ae5224",[198,242,263,285,286,297,312,333,343],[22,76,100,15]],["Ochre Red","ab544d",[199,283],[18,73,63,20]],["Scarlet","cb2f43",[136,308,332],[10,95,72,7]],["Carmine","cc1236",[39,117,122,154,225,232,307,313],[0,100,75,16]],["Indian Lake","c53c69",[299,331],[12,89,35,9]],["Rosolanc Purple","b73f74",[48,144,170,204,277,346],[30,90,33,0]],["Pomegranite Purple","b71f57",[220,271],[23,100,50,6]],["Hydrangea Red","a94151",[142],[38,90,70,0]],["Brick Red","a84222",[37,108,246,322,328],[22,84,100,18]],["Carmine Red","a62c37",[35,51,104,130,181,200,221,228,233,237,245,338],[25,95,80,16]],["Pompeian Red","ab2439",[30,71,120,212,311,324],[18,97,74,19]],["Red","a72144",[251,261],[30,100,70,10]],["Brown","7c4226",[110,121,145,161],[35,74,90,35]],["Hay's Russet","793327",[58,82,95,152,186,231,249,304,314,336,345],[37,85,87,35]],["Vandyke Red","82241f",[16,133,147,316,335],[32,95,95,33]],["Pansy Purple","7d133a",[157,273],[34,100,60,34]],["Pale Burnt Lake","802626",[124,171,177,205,217,258,269,283],[25,90,80,40]],["Violet Red","642d5e",[9],[75,100,50,5]],["Vistoris Lake","6d4145",[63,91,165,226,290,337],[40,71,55,40]],["Sulpher Yellow","f5ecc2",[52,72,80,104,132,135,151,208,246,254,270,294,296,310,315,320,321,326],[4,4,28,0]],["Pale Lemon Yellow","ffefae",[3,31,60,76,99,109,111,169,185,195,203,228,241,261,272,281,290,292,336],[0,4,38,0]],["Naples Yellow","fbe6a0",[14,115,166,193,303,325],[2,7,44,0]],["Ivory Buff","ebd3a2",[11,50,94,102,126,178,184,190,209,214,235,243,262,266,301,343],[8,15,40,0]],["Seashell Pink","fdd4bd",[45,84,88,113,150,176,194,276,334],[0,19,23,0]],["Light Pinkish Cinnamon","fcc79b",[317],[0,25,40,0]],["Pinkish Cinnamon","eeb480",[78,161,175,232,258,263,292,305,310],[5,32,53,0]],["Cinnamon Buff","fdc57e",[23,127,137,180,210,234,246,323,344],[0,25,57,0]],["Cream Yellow","fdbf68",[122,192,215,226,267,278,294,295,300,302,304,311,329,342],[0,28,68,0]],["Golden Yellow","f3a257",[26,81,132,138,140,179,206,229,309,315],[2,42,74,0]],["Vinaceous Cinnamon","eea78c",[203,205,213,256,260,279,299],[4,40,42,0]],["Ochraceous Salmon","d8a37b",[32,71,121,186,217,220,223,238,296,339],[15,38,55,0]],["Isabella Color","c5a56e",[4,12,241,292],[15,28,60,10]],["Maple","c59f6b",[282],[5,26,56,20]],["Olive Buff","c1c494",[83,175,200,330,348],[16,6,42,12]],["Ecru","c2ae93",[167,249,275,279,292,302,317,327],[20,25,40,6]],["Yellow","fff200",[22,62,68,154,240,251,295,313],[0,0,100,0]],["Lemon Yellow","f8ed43",[45,123,138,158,168,173,189,210,253,259,289,298,306,317,333],[5,0,85,0]],["Apricot Yellow","ffdd00",[107,129,163,198,213,247,265,284,305,319],[0,10,100,0]],["Pyrite Yellow","cab356",[239,250,255,287],[23,25,80,0]],["Olive Ocher","d6b43e",[66,148,149,156,157,249,278],[18,26,90,0]],["Yellow Ocher","e2b540",[42,96,118,124,126,191,222,325],[12,28,88,0]],["Orange Yellow","fcb315",[114,148,153,164,170,257,286,338],[0,33,100,0]],["Yellow Orange","f99d1b",[2,53,89,151,171,209,222,235,267,288,297,312,319,335],[0,45,100,0]],["Apricot Orange","f68c50",[211,253,309,328],[0,55,75,0]],["Orange","f37420",[7,46,141,144,149,256,272],[0,68,100,0]],["Peach Red","f15a30",[115,250,274,285,298,303,326,340],[0,80,90,0]],["English Red","d96629",[1,131,190,308,339],[13,73,100,0]],["Cinnamon Rufous","c27544",[8,10,103,158,172,204,206],[20,60,82,5]],["Orange Rufous","c16b27",[91,102,222],[18,65,100,8]],["Sulphine Yellow","c19f2c",[36,65,142,160,252],[24,32,100,4]],["Khaki","bc892b",[129,146,159,236,248],[24,45,100,6]],["Citron Yellow","b2b73e",[40,87,145,150,153,196,305,323],[35,17,95,0]],["Citrine","b09f36",[59,93,132,133,262],[36,32,100,0]],["Buffy Citrine","96874d",[100,177,233],[42,40,82,8]],["Dark Citrine","8b835b",[10,41,274,304],[38,34,67,20]],["Light Grayish Olive","848061",[107,184],[43,36,62,19]],["Krongbergs Green","84875e",[29],[48,35,70,12]],["Olive","837e31",[96,201,254,258,277,310,334],[48,38,100,15]],["Orange Citrine","986f2d",[212,342],[28,48,92,24]],["Sudan Brown","a36752",[207,214,273],[25,60,65,19]],["Olive Green","6b7140",[66,243,270,297],[56,40,85,22]],["Light Brownish Olive","806e4b",[199,318],[42,46,73,24]],["Deep Grayish Olive","635a3a",[146,343],[50,48,78,37]],["Pale Raw Umber","71502f",[26,73,160,234,296],[46,63,87,32]],["Sepia","644b1e",[24,288],[48,60,100,40]],["Madder Brown","762c19",[28,79,98,173,237,275,323],[36,88,100,38]],["Mars Brown Tobacco","653514",[19],[39,76,100,47]],["Vandyke Brown","4b3317",[110,113,118,182,192,328],[56,71,97,52]],["Turquoise Green","b5decc",[36,74,147,163,173,202,223,230,263,272,285,293,300,305,317,346],[29,0,24,0]],["Glaucous Green","b4cdc2",[7,150,171,207,239,260],[30,9,24,0]],["Dark Greenish Glaucous","b7c2a9",[264,311],[30,15,36,0]],["Yellow Green","afd472",[111,141,276,326,334],[35,0,72,0]],["Light Green Yellow","c7d14f",[61,289,291,311,346],[26,5,85,0]],["Night Green","87c540",[19,32,158,326],[52,0,100,0]],["Olive Yellow","a6a159",[124,211,265,347],[40,30,80,0]],["Artemesia Green","709390",[293,312],[57,28,39,8]],["Andover Green","6d7e77",[244,346],[60,40,50,10]],["Rainette Green","8fa071",[73,162,188,266,301],[42,20,62,10]],["Chromium Green","719470",[105,200,219,283],[50,16,58,20]],["Pistachio Green","648f7b",[127,137],[64,29,56,6]],["Sea Green","00b49b",[17,21,58,86,133,250,260,284,291,340,347],[80,0,51,0]],["Benzol Green","00978d",[15,54,92,122,155,247,266,267,281,304,306],[100,15,55,0]],["Light Porcelain Green","00908a",[44,193,328],[86,22,50,3]],["Green","489b6e",[198,216,293],[75,21,73,0]],["Dull Viridian Green","009465",[136,256,306,316],[90,20,80,0]],["Oil Green","819238",[245,299,320],[53,28,100,8]],["Diamine Green","1a7444",[38,146,217,242,251,313],[87,32,91,18]],["Cossack Green","437742",[5,135,262,270,278,294,319,341,348],[76,32,91,18]],["Lincoln Green","555832",[70,121,203,210,280,290],[60,48,86,37]],["Blackish Olive","42533e",[109,318,336],[56,32,63,55]],["Deep Slate Olive","253122",[189,229,268,303,310,321,332,341,342,348],[76,60,80,62]],["Nile Blue","bce4e5",[25,250,268,302,306,330,345],[25,0,10,0]],["Pale King's Blue","a7d4e4",[16,49,72,75,167,196,213,234,287],[33,4,7,0]],["Light Glaucous Blue","a5c8d1",[54,93,119,152,178,204,227,320,339,341],[35,10,14,0]],["Salvia Blue","97acc8",[29,129,135,139,142,188,209,212,237,272,294,321,330],[41,25,10,0]],["Cobalt Green","96d1aa",[156,188,201,202,230,271,281,282,290,291,308,333],[42,0,42,0]],["Calamine BLue","78cdd0",[20,41,65,159,176,255,261,287,291,300],[50,0,20,0]],["Venice Green","62c6bf",[78,128,138,189,283,345],[58,0,30,0]],["Cerulian Blue","0093a5",[1,63,99,125,148,227,240,264],[84,26,32,0]],["Peacock Blue","00939b",[131,286],[100,19,43,0]],["Green Blue","099197",[12,74,79,178,208,252,259,271,330],[82,24,40,3]],["Olympic Blue","5a82b3",[44,67,157,194,231,274,324],[69,44,10,0]],["Blue","006eb8",[49,51,88,143,154,186,191,215,257,267,295,333],[95,54,0,0]],["Antwarp Blue","007190",[85,106,114,140,163,172,208,244,258,281,299,302,334],[100,40,30,10]],["Helvetia Blue","005b8d",[39,48,161,187,218,259,312,347],[100,62,19,10]],["Dark Medici Blue","547076",[160,224,241,249],[70,45,45,15]],["Dusky Green","004f46",[94,219,225,278,284,318,332,338],[100,30,64,50]],["Deep Lyons Blue","1c4286",[22,38,101,126,179,199,236,247,314,344],[100,85,15,6]],["Violet Blue","40456a",[75,83,89,98,125,233,286,289,297,309,339],[85,79,38,16]],["Vandar Poel's Blue","064f6e",[5,77,151,167,168,309,343],[100,73,43,10]],["Dark Tyrian Blue","12354e",[2,60,67,119,141,245,279],[90,66,36,50]],["Dull Violet Black","1e0e3f",[95,106,145,265,277,289,295,331],[95,106,38,50]],["Deep Indigo","051230",[6,28,139,155,182,211,232],[100,92,52,60]],["Deep Slate Green","112f2c",[84,149,166,271,318,325],[80,50,60,70]],["Grayish Lavender - A","b5b1d8",[8,15,159,177,218,248,307],[28,28,0,0]],["Grayish Lavender - B","c0a9b3",[47,56,174,187,235,327,329,338],[25,33,20,0]],["Laelia Pink","ca92a8",[20,254,280,337],[20,48,18,0]],["Lilac","b984af",[143,162,282,347],[28,54,8,0]],["Eupatorium Purple","bf5892",[215,315,322],[25,79,12,0]],["Light Mauve","9a72aa",[23,80,128,134,180,274,331],[43,62,5,0]],["Aconite Violet","a36aa5",[43,64,90,187,220,257,269,301,307,324,344],[39,68,5,0]],["Dull Blue Violet","80719e",[9,100],[57,60,17,0]],["Dark Soft Violet","66629c",[64,127,197],[70,68,13,0]],["Blue Violet","6450a1",[116,175,196,322,345],[72,80,0,0]],["Purple Drab","84565b",[236],[38,65,49,26]],["Deep Violet / Plumbeous","70727c",[183,192,218],[61,52,43,7]],["Veronia Purple","8c4c62",[13,24,168,183],[42,78,46,15]],["Dark Slate Purple","704357",[225,248],[64,85,60,10]],["Taupe Brown","7a4456",[57,123,174,224,275,280,288],[30,70,35,40]],["Violet Carmine","713b4c",[337],[64,90,70,10]],["Violet","4f4086",[42,56,130,156,164,181,205,214,226,316,331,335],[85,90,18,0]],["Red Violet","59256a",[4,37,134,136,170,172,183,316],[76,100,25,15]],["Cotinga Purple","501345",[61,181,238,253,307,329,348],[66,100,42,40]],["Dusky Madder Violet","4e1d4c",[18,50,53,82,103,314],[75,100,46,30]],["White","ffffff",[55],[0,0,0,0]],["Neutral Gray","b6bfc1",[34,139,180,195,197,221,228,229,273,303,324,340],[29,18,20,0]],["Mineral Gray","a2b0ad",[11,30],[33,18,25,7]],["Warm Gray","a1a39a",[69,76,81,143,169,238,259,261],[37,28,36,3]],["Slate Color","34454c",[27,33,57,140,202,243,245,251,253,263,296,329,335],[85,70,62,30]],["Black","111314",[46,52,62,69,112,117,144,190,207,216,221,242,255,256,269,276,288,298,313,323,337,340,344],[20,10,15,100]]];
 
 function hexToRgb(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
 function rgbToHex(r, g, b) { return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''); }
@@ -445,9 +481,9 @@ function de2000(c1, c2) {
   return Math.sqrt(Math.pow(dLp / Sl, 2) + Math.pow(dCp / Sc, 2) + Math.pow(dHp / Sh, 2) + Rt * (dCp / Sc) * (dHp / Sh));
 }
 
-const W = RAW.map(([name, hex, combos], i) => {
+const W = RAW.map(([name, hex, combos, cmyk], i) => {
   const rgb = hexToRgb(hex), lab = rgbToLab(...rgb);
-  return { i, name, hex: '#' + hex, rgb, lab, combos, light: lab[0] > 62 };
+  return { i, name, hex: '#' + hex, rgb, lab, combos, cmyk: cmyk || [0, 0, 0, 0], light: lab[0] > 62 };
 });
 const COMBOS = (() => {
   const m = {};
@@ -1041,11 +1077,11 @@ function savedCard(o) {
 
 function viewDict() {
   const q = S.dictQuery.trim().toLowerCase();
-  const list = W.filter(w => !q || w.name.toLowerCase().includes(q));
-  return `<div class="sec-head" style="margin-top:8px"><h2>Colores de Wada</h2></div><p class="muted" style="margin-top:0;max-width:62ch">Los 159 colores del diccionario. Toca uno para ver sus combinaciones y qué prendas tuyas lo tienen.</p>
-    <div class="field" style="max-width:360px"><label for="f-dict">Buscar color</label><input type="search" id="f-dict" placeholder="Ej. Olive, Slate, Pink" value="${esc(S.dictQuery)}"></div>
-    <div class="summary" style="margin-top:12px"><span class="eyebrow">${list.length} colores · ${COMBOS.length} combinaciones</span></div>
-    <div class="swgrid">${list.map(w => `<button class="sw" data-action="open-color" data-w="${w.i}"><div class="chipc" style="--c:${w.hex}"></div><div class="lbl"><b>${esc(w.name)}</b><span>${w.i + 1} · ${w.hex}</span></div></button>`).join('')}</div>`;
+  const list = W.filter(w => !q || w.name.toLowerCase().includes(q) || colorWordEs(w.lab).includes(q));
+  return `<div class="sec-head" style="margin-top:8px"><h2>Colores de Wada</h2><span class="eyebrow">${list.length} de 159</span></div>
+    <div class="searchbar" style="margin-top:4px">${SEARCH_SVG}<input type="search" id="f-dict" placeholder="Busca un color: Olive, rosado, azul…" value="${esc(S.dictQuery)}" aria-label="Buscar color"></div>
+    ${list.length ? `<div class="bands-list">${list.map(w => bandHtml(w.i, { open: S.openBand === w.i, action: 'band', ink: DICT_INK[w.i], kicker: `Color ${String(w.i + 1).padStart(3, '0')}` })).join('')}</div>`
+      : `<div class="empty">No encontré colores con esa búsqueda.</div>`}`;
 }
 
 /* ---------- Ideas para una prenda (funciona aunque el clóset esté vacío) ---------- */
@@ -1106,6 +1142,56 @@ function pinBtn(colors, label) {
   const q = 'outfit ' + words.join(' ');
   const url = 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(q);
   return `<div class="pinbox"><a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label || 'Ver outfits en Pinterest')}</a><span class="hint">Abre Pinterest buscando “${esc(q)}”.</span></div>`;
+}
+
+/* ---------- Franjas de color (estilo muestrario desplegable) ---------- */
+const PIN_PATH = 'M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.97 5.39 18.592.026 11.985.026L12.017 0z';
+function pinIcon(colors) {
+  const words = [...new Set(colors.map(i => colorWordEs(W[i].lab)))];
+  const q = 'outfit ' + words.join(' ');
+  const url = 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(q);
+  return `<a class="pin-ico" href="${esc(url)}" target="_blank" rel="noopener noreferrer" data-action="ext" title="Ver outfits en Pinterest: ${esc(q)}" aria-label="Ver outfits en Pinterest: ${esc(q)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#E60023" d="${PIN_PATH}"/></svg></a>`;
+}
+function hsl(rgb) {
+  const [r, g, b] = rgb.map(v => v / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  let h = 0, s = 0;
+  if (mx !== mn) {
+    const d = mx - mn; s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn);
+    h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60;
+  }
+  return `${Math.round(h)}°, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%`;
+}
+function inkAmong(i, candidates) {
+  let best = null, bd = -1;
+  for (const j of candidates) { if (j === i) continue; const d = Math.abs(W[j].lab[0] - W[i].lab[0]); if (d > bd) { bd = d; best = j; } }
+  return best != null && bd >= 38 ? W[best].hex : textOn(W[i]);
+}
+const DICT_INK = W.map(w => inkAmong(w.i, [...new Set(w.combos.flatMap(no => COMBO_BY_NO[no].colors))]));
+function bandHtml(i, o) {
+  const w = W[i], open = !!o.open;
+  const n = pool().filter(g => dist(g, i) <= S.T).length;
+  return `<div class="band${open ? ' open' : ''}" ${o.action ? `data-action="${o.action}" role="button" tabindex="0" aria-expanded="${open}"` : ''} data-w="${i}" style="--bg:${w.hex};--ink:${o.ink}">
+    <div class="band-head"><span class="band-k">${esc(o.kicker)}</span><span class="band-name">${esc(w.name)}.</span></div>
+    <div class="band-body">
+      ${pinIcon(o.pinColors || [i])}
+      <dl class="specs"><div><dt>HEX</dt><dd>${w.hex.slice(1).toUpperCase()}</dd></div><div><dt>RGB</dt><dd>${w.rgb.join(', ')}</dd></div><div><dt>HSL</dt><dd>${hsl(w.rgb)}</dd></div><div><dt>CMYK</dt><dd>${w.cmyk.join(', ')}</dd></div></dl>
+      <span class="vlabel" aria-hidden="true">SANZO WADA</span>
+      ${o.actions === false ? '' : `<div class="band-actions"><button class="band-btn" data-action="open-color" data-w="${i}">Ver sus ${w.combos.length} combinaciones</button><span class="band-note">${n ? `Tienes ${n} ${n === 1 ? 'prenda' : 'prendas'} de este color` : 'Aún no tienes prendas de este color'}</span></div>`}
+    </div>
+  </div>`;
+}
+function comboAccordion(c, openIdx) {
+  return `<div class="acc" role="group" aria-label="Combinación ${c.no}">${c.colors.map((i, k) => bandHtml(i, { open: k === (openIdx || 0), action: 'acc', ink: inkAmong(i, c.colors), kicker: `Color ${String(k + 1).padStart(2, '0')}`, pinColors: c.colors, actions: false })).join('')}</div>`;
+}
+function toggleBand(el, single) {
+  const list = el.parentElement;
+  const wasOpen = el.classList.contains('open');
+  if (single && wasOpen) return;
+  list.querySelectorAll(':scope > .band.open').forEach(b => { b.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); });
+  if (!wasOpen) {
+    el.classList.add('open'); el.setAttribute('aria-expanded', 'true');
+    if (!single) { S.openBand = Number(el.dataset.w); setTimeout(() => el.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }), 460); }
+  } else if (!single) S.openBand = null;
 }
 
 /* ---------- Hojas ---------- */
@@ -1266,9 +1352,7 @@ const SHEETS = {
       .sort((a, b) => (b.have / b.c.colors.length) - (a.have / a.c.colors.length));
     return {
       title: esc(w.name),
-      body: `<div class="hero-img"><div class="bands"><span style="background:${w.hex}"></span></div></div>
-        <span class="mono muted">Color ${w.i + 1} de 159 · ${w.hex} · L*a*b* ${w.lab.map(v => Math.round(v)).join(' / ')}</span>
-        ${pinBtn([w.i], 'Ver outfits de este color en Pinterest')}
+      body: `<div class="acc" style="height:360px">${bandHtml(w.i, { open: true, ink: DICT_INK[w.i], kicker: `Color ${String(w.i + 1).padStart(3, '0')}`, actions: false })}</div>
         <div class="field"><span class="eyebrow">En tu clóset</span>
           ${mine.length ? `<div class="list">${mine.map(x => `<div class="need">${media(x.g)}<span>${esc(x.g.name)}</span><span class="mono muted">ΔE ${round1(x.d)}</span></div>`).join('')}</div>` : `<span class="muted">Ninguna prenda tiene este color a tolerancia ΔE ${S.T}.</span>`}
           <div><button class="btn small" data-action="imagine-from" data-w="${w.i}">Imaginar una prenda de este color</button></div></div>
@@ -1287,8 +1371,7 @@ const SHEETS = {
     const res = suggest(p, { T: S.T, onlyCombo: c.no, limit: 1 });
     return {
       title: `Combinación N.º ${c.no}`,
-      body: `${paletteHtml(c.colors)}
-        ${pinBtn(c.colors)}
+      body: `${comboAccordion(c, data.openIdx)}
         <div class="field"><span class="eyebrow">Color por color</span><div class="list">
         ${rows.map(r => r.g ? `<div class="need">${media(r.g)}<span><b style="font-family:var(--f-display)">${esc(W[r.i].name)}</b><br><span class="muted">${esc(r.g.name)}</span></span><span class="mono muted">ΔE ${round1(r.d)}</span></div>`
           : `<div class="need"><i style="--c:${W[r.i].hex}"></i><span><b style="font-family:var(--f-display)">${esc(W[r.i].name)}</b><br><span class="muted">Te falta una prenda de este color</span></span><button class="btn small" data-action="imagine-from" data-w="${r.i}">Imaginar</button></div>`).join('')}
@@ -1592,6 +1675,8 @@ const A = {
   filter(el) { S.filter = el.dataset.f; render(); },
   'add-menu'() { S.stack = [{ type: 'add', data: {} }]; renderSheet(); },
   imagine() { S.imagine = { category: '', wada: null, name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
+  band(el) { toggleBand(el, false); },
+  acc(el) { toggleBand(el, true); },
   'next-palette'() { S.palShift = (S.palShift || 0) + 1; render(); },
   'color-filter'(el) { const w = Number(el.dataset.w); S.colorF = S.colorF === w ? null : w; render(); },
   'open-ideas'(el) { openSheet('ideas', { id: el.dataset.id }); },
@@ -1698,7 +1783,11 @@ document.addEventListener('change', async e => {
     if (v) { try { await Store.updateGarment(t.dataset.id, { name: v }); toast('Nombre actualizado.'); } catch (er) { toast('No se pudo cambiar el nombre.'); } }
   }
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.stack.length) closeAll(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.stack.length) { closeAll(); return; }
+  const el = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && el && el.getAttribute && el.getAttribute('role') === 'button' && el.dataset.action && A[el.dataset.action]) { e.preventDefault(); A[el.dataset.action](el); }
+});
 document.addEventListener('error', e => {
   const t = e.target;
   if (t && t.tagName === 'IMG' && t.dataset.fb && t.src !== t.dataset.fb) t.src = t.dataset.fb;
