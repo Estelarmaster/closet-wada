@@ -574,6 +574,72 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 @media (prefers-reduced-motion: reduce) { .dr-row.pinned .dr-item.cur, .dr-row.nudge .dr-item.cur { animation: none; } }
 .dr-pins { font-size: 13px; color: var(--muted); }
 .dr-pins b { color: var(--ink); }
+
+/* ---------- Bienvenida (usuarios nuevos) ---------- */
+.onb { position: fixed; inset: 0; z-index: 60; background: var(--surface); color: var(--ink); display: flex; flex-direction: column; padding: calc(14px + env(safe-area-inset-top, 0px)) 20px calc(18px + env(safe-area-inset-bottom, 0px)); }
+.onb-top { display: flex; justify-content: space-between; align-items: center; min-height: 40px; }
+.onb-dots { display: flex; gap: 6px; }
+.onb-dots i { width: 8px; height: 8px; border-radius: 999px; background: var(--line); transition: width .3s, background .3s; }
+.onb-dots i.on { width: 22px; background: var(--ink); }
+.onb-skip { border: 0; background: none; color: var(--muted); font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; padding: 8px; }
+.onb-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; max-width: 520px; width: 100%; margin: 0 auto; animation: onbIn .45s cubic-bezier(.2, .8, .25, 1) both; }
+.onb-body.back { animation-name: onbBack; }
+@keyframes onbIn { from { opacity: 0; transform: translateX(40px); } }
+@keyframes onbBack { from { opacity: 0; transform: translateX(-40px); } }
+.onb h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(28px, 8vw, 38px); line-height: 1.08; letter-spacing: -.01em; margin: 0; }
+.onb p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--muted); }
+.onb p b { color: var(--ink); }
+.onb-vis { position: relative; height: min(40vh, 340px); border-radius: 26px; overflow: hidden; display: flex; }
+.onb-vis .band { flex: 1; height: 100%; transform-origin: bottom; animation: onbBand .7s cubic-bezier(.2, .8, .25, 1) both; animation-delay: calc(var(--k) * 90ms); }
+@keyframes onbBand { from { transform: scaleY(0); } }
+.onb-vis .hero { position: absolute; inset: 8% 14%; display: grid; place-items: center; animation: onbHero .8s .35s cubic-bezier(.2, .8, .25, 1) both; }
+.onb-vis .hero img, .onb-vis .hero svg { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 16px 18px rgba(0, 0, 0, .28)); }
+@keyframes onbHero { from { opacity: 0; transform: translateY(24px) scale(.94); } }
+.onb-combos { display: grid; gap: 12px; }
+.onb-combo { display: flex; height: 64px; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); animation: onbIn .5s cubic-bezier(.2, .8, .25, 1) both; animation-delay: calc(var(--k) * 120ms); }
+.onb-combo span { flex: 1; display: flex; align-items: flex-end; padding: 6px 8px; font-size: 10.5px; font-weight: 700; }
+.onb-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.onb-steps li { display: flex; gap: 14px; align-items: flex-start; animation: onbIn .5s cubic-bezier(.2, .8, .25, 1) both; animation-delay: calc(var(--k) * 120ms); }
+.onb-steps .ic { flex: none; width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; background: var(--c); color: var(--ci); }
+.onb-steps .ic svg { width: 24px; height: 24px; }
+.onb-steps b { display: block; font-family: var(--f-display); font-size: 17px; }
+.onb-steps span { color: var(--muted); font-size: 14.5px; line-height: 1.4; }
+.onb-choices { display: grid; gap: 12px; }
+.onb-choice { display: flex; gap: 14px; align-items: center; text-align: left; border: 0; border-radius: 20px; padding: 16px; cursor: pointer; font: inherit; color: var(--ink); background: var(--paper); }
+.onb-choice.main { background: var(--accent); color: var(--on-accent); }
+.onb-choice .ic { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: rgba(255, 255, 255, .22); }
+.onb-choice:not(.main) .ic { background: var(--surface); }
+.onb-choice .ic svg { width: 24px; height: 24px; }
+.onb-choice b { display: block; font-family: var(--f-display); font-size: 17px; }
+.onb-choice small { font-size: 13.5px; opacity: .85; }
+.onb-choice:focus-visible, .onb-next:focus-visible, .onb-skip:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.onb-foot { display: flex; justify-content: flex-end; max-width: 520px; width: 100%; margin: 0 auto; gap: 10px; }
+.onb-next { border: 0; border-radius: 999px; padding: 15px 26px; background: var(--ink); color: var(--paper); font: inherit; font-weight: 800; font-size: 16px; cursor: pointer; }
+.onb-prev { border: 0; border-radius: 999px; padding: 15px 20px; background: var(--paper); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; margin-right: auto; }
+@media (prefers-reduced-motion: reduce) { .onb-body, .onb-vis .band, .onb-vis .hero, .onb-combo, .onb-steps li { animation: none; } }
+.coach { background: var(--ink); color: var(--paper); border-radius: 20px; padding: 14px 16px; margin-bottom: 12px; display: grid; gap: 10px; animation: onbIn .45s ease both; }
+.coach b { font-family: var(--f-display); font-size: 16px; }
+.coach ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.coach li { display: flex; gap: 10px; align-items: center; }
+.coach li i { flex: none; width: 28px; height: 28px; border-radius: 50%; background: rgba(255, 255, 255, .14); display: grid; place-items: center; font-style: normal; font-weight: 800; }
+.coach li i svg { width: 15px; height: 15px; }
+.coach button { justify-self: end; border: 0; border-radius: 999px; padding: 8px 16px; background: var(--paper); color: var(--ink); font: inherit; font-weight: 800; cursor: pointer; }
+
+/* ---------- Opiniones de testers ---------- */
+.fb-fab { position: fixed; left: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 12; border: 0; border-radius: 999px; padding: 10px 14px 10px 12px; background: var(--surface); color: var(--ink); box-shadow: 0 4px 16px rgba(0, 0, 0, .18); display: flex; gap: 6px; align-items: center; font: inherit; font-weight: 800; font-size: 13.5px; cursor: pointer; }
+.fb-fab svg { width: 18px; height: 18px; }
+.fb-faces { display: flex; justify-content: space-between; gap: 6px; }
+.fb-face { flex: 1; aspect-ratio: 1; max-width: 62px; border: 2px solid transparent; border-radius: 18px; background: var(--paper); font-size: 28px; cursor: pointer; }
+.fb-face[aria-pressed="true"] { border-color: var(--ink); background: var(--surface); transform: scale(1.06); }
+.fb-face:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sheet textarea { width: 100%; min-height: 76px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font: inherit; font-size: 15px; background: var(--surface); color: var(--ink); resize: vertical; box-sizing: border-box; }
+.fb-item { border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: grid; gap: 6px; }
+.fb-item .fb-h { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+.fb-item .fb-h b { color: var(--ink); font-size: 14px; }
+.fb-item p { margin: 0; font-size: 14px; }
+.fb-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.fb-tags span { font-size: 11.5px; font-weight: 700; background: var(--paper); border-radius: 999px; padding: 2px 8px; }
+.proto-ver { text-align: center; font-size: 12px; color: var(--muted); }
 /* Saludo solo en Inicio */
 .wrap.sin-saludo { padding-top: 12px; }
 </style>
@@ -605,6 +671,7 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
   <button class="sheet-bg" data-action="close-sheet" aria-label="Cerrar" tabindex="-1"></button>
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet-panel"></div>
 </div>
+<button class="fb-fab" data-action="fb-open" aria-label="Dar mi opinión sobre la app"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Opinar</button>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -915,12 +982,18 @@ const Store = {
     let uid = null;
     try { uid = user ? await user.id() : null; } catch (e) { uid = null; }
     try { if (user) { const me = await user.me(); S.uname = (me.name || '').split(' ')[0]; } } catch (e) {}
-    if (db && uid) {
+    this.user = user; this.uid = uid; this.anyDb = db;
+    try { S.isOwner = user ? !!(await user.isOwner()) : false; } catch (e) { S.isOwner = false; }
+    let canWrite = true;
+    try { if (user && typeof user.can === 'function' && (await user.can('data.write')) === false) canWrite = false; } catch (e) {}
+    this.canWrite = !!(db && uid && canWrite);
+    if (db && uid && canWrite) {
       this.db = db; this.assets = assets;
       const base = db.doc('data/users/' + uid + '/closet');
       this.gCol = base.collection('garments');
       this.oCol = base.collection('outfits');
       this.favDoc = base.collection('prefs').doc('colores');
+      this.appDoc = base.collection('prefs').doc('app');
       this.favDoc.onSnapshot(s => { const d = s.exists ? s.data() : null; S.favs = d && Array.isArray(d.favs) ? d.favs.slice() : []; render(); }, () => {});
       S.mode = 'cloud';
       this.gCol.onSnapshot(s => {
@@ -947,6 +1020,16 @@ const Store = {
       S.loaded = true;
     }
     render();
+    Onb.maybeStart();
+  },
+  async getFlag(k) {
+    if (lsGet('closet-wada-' + k)) return true;
+    if (this.appDoc) { try { const d = await this.appDoc.get(); return !!(d.exists && d.data()[k]); } catch (e) {} }
+    return false;
+  },
+  async setFlag(k) {
+    lsSet('closet-wada-' + k, '1');
+    if (this.appDoc) { try { const d = await this.appDoc.get(); await this.appDoc.set(Object.assign({}, d.exists ? d.data() : {}, { [k]: true })); } catch (e) {} }
   },
   persistLocal() {
     const data = { garments: S.garments, outfits: S.outfits, favs: S.favs };
@@ -1384,6 +1467,7 @@ function viewCombine() {
   const chip = (k, l) => `<button class="chip" data-action="dr-extra" data-k="${k}" aria-pressed="${!!S.dr.extra[k]}">${S.dr.extra[k] ? '✓ ' : '+ '}${l}</button>`;
   return `${drSearchBar(res.length)}
     ${demoNote('combine')}
+    ${coachHtml()}
     <div class="chips dr-chips" role="group" aria-label="Filas extra">${chip('outer', 'Saco')}${chip('acc', 'Accesorio')}</div>
     <section class="dr" id="dr" aria-label="Probador: una fila por tipo de prenda">${rows.map((k, i) => drRowHtml(k, i)).join('')}</section>
     <div class="dr-foot" id="dr-foot">${drFoot()}</div>`;
@@ -1805,6 +1889,119 @@ function drPut(g, pin) {
   S.dr.cyc = null; S.dr.last = g.id;
 }
 
+
+/* ---------- Bienvenida para usuarios nuevos ---------- */
+const APP_VERSION = 'Prototipo v0.1';
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+const CAM_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const DROP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>';
+const HANGER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.6a2.1 2.1 0 1 1 2.1-2.1c0 .9-.6 1.4-1.3 1.9-.5.3-.8.7-.8 1.2V9.3"/><path d="M12 9.3l-8.9 6.4c-.8.6-.4 1.8.6 1.8h16.6c1 0 1.4-1.2.6-1.8z"/></svg>';
+const CHAT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>';
+const Onb = {
+  i: 0, dir: 1, el: null,
+  async maybeStart() { if (this.el || S.onbChecked) return; S.onbChecked = true; if (await Store.getFlag('onboarded')) return; try { await loadDemo(); } catch (e) {} this.open(); },
+  open() {
+    this.i = 0; this.dir = 1;
+    if (!this.el) { this.el = document.createElement('div'); this.el.className = 'onb'; this.el.id = 'onb'; this.el.setAttribute('role', 'dialog'); this.el.setAttribute('aria-modal', 'true'); this.el.setAttribute('aria-label', 'Bienvenida'); document.body.appendChild(this.el); }
+    this.draw(); const b = this.el.querySelector('.onb-next, .onb-choice'); if (b) b.focus();
+  },
+  close(done) { if (this.el) { this.el.remove(); this.el = null; } if (done !== false) Store.setFlag('onboarded'); },
+  go(d) { this.dir = d; this.i = Math.max(0, Math.min(3, this.i + d)); this.draw(); },
+  hero() {
+    const g = (DEMO.length ? DEMO : EXAMPLES).find(x => x.category === 'top');
+    return g ? (gSrc(g) ? `<img src="${esc(gSrc(g))}" alt="">` : flatSvg(g, null, true)) : '';
+  },
+  slides() {
+    const c = todayCombo();
+    const combos = [33, 190, 221].map(no => COMBO_BY_NO[no]).filter(Boolean);
+    const step = (k, ic, col, t, d) => `<li style="--k:${k}"><span class="ic" style="--c:${W[col].hex};--ci:${textOn(W[col])}">${ic}</span><div><b>${t}</b><span>${d}</span></div></li>`;
+    return [
+      `<div class="onb-vis" aria-hidden="true">${c.colors.map((w, k) => `<span class="band" style="--k:${k};background:${W[w].hex}"></span>`).join('')}<span class="hero">${this.hero()}</span></div>
+       <h2>Tu clóset, en clave de color.</h2>
+       <p>Fotografía tu ropa y descubre qué combina, con la ayuda de un diccionario de colores de casi cien años.</p>`,
+      `<div class="onb-combos" aria-hidden="true">${combos.map((cb, k) => `<div class="onb-combo" style="--k:${k}">${cb.colors.map(w => `<span style="background:${W[w].hex};color:${textOn(W[w])}">${esc(W[w].name)}</span>`).join('')}</div>`).join('')}</div>
+       <h2>Combinaciones que ya funcionan.</h2>
+       <p>En los años treinta, el artista japonés <b>Sanzo Wada</b> reunió <b>348 combinaciones de color</b> que se ven bien juntas. La app compara tu ropa con ellas, para que no tengas que adivinar.</p>`,
+      `<h2>Así funciona.</h2>
+       <ul class="onb-steps">
+         ${step(0, CAM_SVG, 120, 'Fotografía tu prenda', 'Recórtala con el dedo, como en un editor de fotos.')}
+         ${step(1, DROP_SVG, 13, 'Confirma su color', 'La app propone el color de Wada más parecido y tú decides.')}
+         ${step(2, HANGER_SVG, 66, 'Arma tus outfits', 'Desliza cada fila, fija 📌 lo que te gusta y toca ✦ para que Wada complete el resto.')}
+       </ul>`,
+      `<h2>¿Por dónde empiezas?</h2>
+       <p>Puedes registrar tu ropa ahora o explorar primero un clóset de ejemplo con fotos reales.</p>
+       <div class="onb-choices">
+         <button class="onb-choice main" data-onb="add"><span class="ic">${CAM_SVG}</span><span><b>Registrar mi primera prenda</b><small>Toma o sube una foto</small></span></button>
+         <button class="onb-choice" data-onb="explore"><span class="ic">${HANGER_SVG}</span><span><b>Explorar con un clóset de ejemplo</b><small>Prueba el probador sin subir nada</small></span></button>
+       </div>`
+    ];
+  },
+  draw() {
+    const n = 4, last = this.i === n - 1;
+    this.el.innerHTML = `<div class="onb-top"><div class="onb-dots" aria-hidden="true">${Array.from({ length: n }, (_, k) => `<i class="${k === this.i ? 'on' : ''}"></i>`).join('')}</div>
+        <button class="onb-skip" data-onb="skip">${last ? '' : 'Saltar'}</button></div>
+      <div class="onb-body${this.dir < 0 ? ' back' : ''}" aria-live="polite"><span class="vh">Paso ${this.i + 1} de ${n}</span>${this.slides()[this.i]}</div>
+      <div class="onb-foot">${this.i ? '<button class="onb-prev" data-onb="prev">Atrás</button>' : ''}${last ? '' : `<button class="onb-next" data-onb="next">${this.i ? 'Siguiente' : 'Empezar'}</button>`}</div>`;
+  },
+  act(a) {
+    if (a === 'next') this.go(1);
+    else if (a === 'prev') this.go(-1);
+    else if (a === 'skip') this.close();
+    else if (a === 'add') { this.close(); A['add-menu'](); }
+    else if (a === 'explore') { this.close(); S.tab = 'combine'; savePrefs(); render(); window.scrollTo({ top: 0 }); }
+  }
+};
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-onb]'); if (b && Onb.el) { e.preventDefault(); Onb.act(b.dataset.onb); } });
+let ONB_X = null;
+document.addEventListener('pointerdown', e => { if (Onb.el && e.target.closest('#onb')) ONB_X = e.clientX; });
+document.addEventListener('pointerup', e => { if (ONB_X == null || !Onb.el) return; const dx = e.clientX - ONB_X; ONB_X = null; if (Math.abs(dx) > 60) { if (dx < 0 && Onb.i < 3) Onb.go(1); else if (dx > 0 && Onb.i > 0) Onb.go(-1); } });
+document.addEventListener('keydown', e => { if (!Onb.el) return; if (e.key === 'Escape') Onb.close(); else if (e.key === 'ArrowRight' && Onb.i < 3) Onb.go(1); else if (e.key === 'ArrowLeft' && Onb.i > 0) Onb.go(-1); });
+function coachHtml() {
+  if (lsGet('closet-wada-coach')) return '';
+  return `<div class="coach" role="note"><b>Así se usa el probador</b><ul>
+    <li><i aria-hidden="true">↔</i>Desliza cada fila para cambiar de prenda.</li>
+    <li><i aria-hidden="true">${PIN_SVG}</i>Fija con el pin las que te gustan: su fila se pinta y ya no se mueve.</li>
+    <li><i aria-hidden="true">${MAGIC_SVG}</i>Toca ✦ y Wada completa el resto con colores que combinan.</li>
+  </ul><button data-action="coach-ok">Entendido</button></div>`;
+}
+
+/* ---------- Opiniones de quienes prueban la app ---------- */
+const FB_TAGS = ['Fácil de usar', 'Me perdí en algún paso', 'Me encantan los colores', 'Las combinaciones me sirven', 'Las fotos se ven mal', 'Recortar es difícil', 'Quiero más ideas', 'Se siente lenta'];
+const FB_FACES = [['😞', 'Muy mal'], ['🙁', 'Mal'], ['😐', 'Regular'], ['🙂', 'Bien'], ['😍', 'Me encanta']];
+function fbText(f) {
+  return `Opinión sobre Clóset Wada (${APP_VERSION})\nCalificación: ${f.rate ? FB_FACES[f.rate - 1][1] : 'sin calificar'}\n${f.tags.length ? 'Etiquetas: ' + f.tags.join(', ') + '\n' : ''}${f.good ? 'Lo que más me gustó: ' + f.good + '\n' : ''}${f.better ? 'Lo que mejoraría: ' + f.better + '\n' : ''}`;
+}
+async function fbSend() {
+  const f = S.fb; if (!f || f.sending) return;
+  const entry = { at: Date.now(), rate: f.rate || 0, tags: f.tags.slice(0, 8), good: f.good.trim().slice(0, 1200), better: f.better.trim().slice(0, 1200), tab: S.tab, prendas: S.garments.length, ejemplo: usingExamples(), app: APP_VERSION, apk: IN_APP };
+  if (Store.canWrite && Store.anyDb && Store.uid) {
+    f.sending = true; renderSheet();
+    try {
+      const ref = Store.anyDb.doc('feedback/' + Store.uid);
+      const cur = await ref.get();
+      const entries = (cur.exists && Array.isArray(cur.data().entries) ? cur.data().entries : []).concat([entry]).slice(-30);
+      await ref.set({ entries, updatedAt: Date.now() });
+      S.fb = null; closeAll(); toast('¡Gracias! Tu opinión llegó.'); return;
+    } catch (e) { f.sending = false; }
+  }
+  f.share = true; renderSheet();
+}
+async function fbLoadAll() {
+  S.fbAll = { loading: true, list: [] }; renderSheet();
+  try {
+    const snap = await Store.anyDb.collection('feedback').get();
+    const ids = snap.docs.map(d => d.id);
+    let ps = {};
+    try { ps = Store.user && ids.length ? await Store.user.profiles(ids) : {}; } catch (e) {}
+    const list = [];
+    snap.docs.forEach((d, k) => { const who = (ps[d.id] && ps[d.id].name) || `Tester ${k + 1}`; (d.data().entries || []).forEach(en => list.push(Object.assign({ who }, en))); });
+    list.sort((a, b) => b.at - a.at);
+    S.fbAll = { loading: false, list };
+  } catch (e) { S.fbAll = { loading: false, list: [], error: true }; }
+  renderSheet();
+}
+
 /* ---------- Probador: una fila por tipo de prenda ---------- */
 const DR_ROWS = { outer: { label: 'Saco', h: 21, noun: 'un saco' }, top: { label: 'Arriba', h: 27, noun: 'una prenda de arriba' }, bottom: { label: 'Abajo', h: 30, noun: 'una prenda de abajo' }, shoes: { label: 'Zapatos', h: 12, noun: 'zapatos' }, acc: { label: 'Accesorio', h: 11, noun: 'un accesorio' } };
 const MAGIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v6M4 7h6M16 3l1.6 4.4L22 9l-4.4 1.6L16 15l-1.6-4.4L10 9l4.4-1.6z"/><path d="M8 14l1 2.6 2.6 1-2.6 1L8 21l-1-2.4-2.6-1 2.6-1z"/></svg>';
@@ -2058,6 +2255,36 @@ const SHEETS = {
       <button class="add-opt" data-action="imagine"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20L16 8M14 4v3M20 10h-3M18.5 5.5l-2 2"/></svg></span><span><b>Imaginar prenda</b><span>Algo que aún no tienes, para ver con qué combina</span></span></button>
     </div>` };
   },
+  feedback() {
+    const f = S.fb || (S.fb = { rate: 0, tags: [], good: '', better: '' });
+    if (f.share) {
+      const txt = fbText(f);
+      return { title: 'Envía tu opinión', body: `<p style="margin:0">No pudimos guardarla desde aquí. Envíala por WhatsApp o cópiala y mándala a quien te invitó a probar la app.</p>
+        <textarea readonly aria-label="Tu opinión">${esc(txt)}</textarea>
+        <div class="row"><a class="btn primary" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener noreferrer">Enviar por WhatsApp</a><button class="btn" data-action="fb-copy">Copiar texto</button></div>` };
+    }
+    const can = f.rate || f.tags.length || f.good.trim() || f.better.trim();
+    return { title: '¿Qué te parece la app?', body: `
+      <div class="fb-faces" role="group" aria-label="Calificación">${FB_FACES.map(([e, l], k) => `<button class="fb-face" data-action="fb-rate" data-v="${k + 1}" aria-pressed="${f.rate === k + 1}" aria-label="${l}" title="${l}">${e}</button>`).join('')}</div>
+      <div class="field"><span class="eyebrow">Marca lo que aplique</span><div class="chips">${FB_TAGS.map(t => `<button class="chip" data-action="fb-tag" data-v="${esc(t)}" aria-pressed="${f.tags.includes(t)}">${esc(t)}</button>`).join('')}</div></div>
+      <div class="field"><label for="fb-good">¿Qué fue lo que más te gustó?</label><textarea id="fb-good" maxlength="1200" placeholder="Opcional">${esc(f.good)}</textarea></div>
+      <div class="field"><label for="fb-better">¿Qué mejorarías o qué te costó?</label><textarea id="fb-better" maxlength="1200" placeholder="Opcional">${esc(f.better)}</textarea></div>
+      <div class="row"><button class="btn primary" data-action="fb-send"${can && !f.sending ? '' : ' disabled'}>${f.sending ? 'Enviando…' : 'Enviar opinión'}</button></div>
+      <span class="hint">Se envía junto con la pantalla en la que estabas y cuántas prendas tienes. Nada más.</span>` };
+  },
+  fbadmin() {
+    const a = S.fbAll || { loading: true, list: [] };
+    if (a.loading) return { title: 'Comentarios de testers', body: loaderHtml('Cargando comentarios…') };
+    if (a.error) return { title: 'Comentarios de testers', body: '<p>No se pudieron cargar los comentarios.</p>' };
+    const avg = a.list.filter(x => x.rate).reduce((s, x, _, arr) => s + x.rate / arr.length, 0);
+    return { title: `Comentarios de testers · ${a.list.length}`, body: a.list.length ? `
+      ${avg ? `<p style="margin:0">Promedio: <b>${FB_FACES[Math.round(avg) - 1][0]} ${avg.toFixed(1)} de 5</b></p>` : ''}
+      ${a.list.map(x => `<div class="fb-item"><div class="fb-h"><b>${esc(x.who)}</b><span>${x.rate ? FB_FACES[x.rate - 1][0] + ' ' : ''}${new Date(x.at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></div>
+        ${x.tags && x.tags.length ? `<div class="fb-tags">${x.tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+        ${x.good ? `<p>👍 ${esc(x.good)}</p>` : ''}${x.better ? `<p>🔧 ${esc(x.better)}</p>` : ''}
+        <span class="hint">${x.ejemplo ? 'Con el clóset de ejemplo' : `${x.prendas} prendas propias`} · ${x.apk ? 'APK' : 'Web'} · ${esc(x.app || '')}</span></div>`).join('')}`
+      : '<div class="empty">Todavía nadie ha dejado comentarios. Comparte la app con tus testers como Colaboradores.</div>' };
+  },
   pasall() {
     const res = S.pasRes || [];
     return { title: res.length === 1 ? '1 outfit posible' : `${res.length} outfits posibles`, body: `<div class="pas-grid">${res.map((o, k) => `<button class="pas-mini${k === S.pasIdx ? ' cur' : ''}" data-action="pas-pick" data-k="${k}" aria-label="Outfit ${k + 1}, combinación ${o.combo.no}"><div class="stage"><div class="bgl" style="background:${pasBg(o)}"></div>${pasLayer(o)}</div>${pasStrip(o)}<span class="mini-no">N.º ${o.combo.no} · ${fitLabel(o.score)}</span></button>`).join('')}</div>` };
@@ -2078,7 +2305,9 @@ const SHEETS = {
       <div class="field"><span class="eyebrow">Mostrar mis prendas</span><div class="chips" role="group" aria-label="Mostrar mis prendas">${lp('photo', 'Fotos originales')}${lp('flat', 'Todas planchadas')}</div>
         <span class="hint">Con fotos originales, solo se ven planchadas las prendas sin foto y las que planches tú desde su ficha.</span></div>
       ${S.garments.length ? `<div class="field"><span class="eyebrow">Clóset de prueba</span><div class="row"><button class="btn small${S.demo ? ' primary' : ''}" data-action="${S.demo ? 'demo-off' : 'demo-on'}">${S.demo ? 'Salir del clóset de prueba' : 'Usar clóset de prueba con fotos reales'}</button></div>
-        <span class="hint">Más de 50 prendas reales fotografiadas en casa, para ver cómo se ve la app con ropa de verdad. Tu clóset no cambia.</span></div>` : ''}` };
+        <span class="hint">Más de 50 prendas reales fotografiadas en casa, para ver cómo se ve la app con ropa de verdad. Tu clóset no cambia.</span></div>` : ''}
+      <div class="field"><span class="eyebrow">Ayuda</span><div class="row"><button class="btn small" data-action="onb-again">Ver la bienvenida otra vez</button><button class="btn small" data-action="fb-open">Dar mi opinión</button>${S.isOwner && Store.anyDb ? '<button class="btn small" data-action="fb-admin">Comentarios de testers</button>' : ''}</div></div>
+      <p class="proto-ver">Clóset Wada · ${APP_VERSION}</p>` };
   },
   draft() {
     const d = S.draft;
@@ -2542,6 +2771,14 @@ const A = {
     S.demo = true; demoReset(); closeAll(); render(); window.scrollTo({ top: 0 }); toast(`Clóset de prueba: ${DEMO.length} prendas reales.`);
   },
   'demo-off'() { S.demo = false; demoReset(); closeAll(); render(); window.scrollTo({ top: 0 }); },
+  'coach-ok'() { lsSet('closet-wada-coach', '1'); const c = document.querySelector('.coach'); if (c) c.remove(); },
+  'onb-again'() { closeAll(); Onb.open(); },
+  'fb-open'() { S.fb = null; openSheet('feedback'); },
+  'fb-admin'() { openSheet('fbadmin'); fbLoadAll(); },
+  'fb-rate'(el) { S.fb.rate = Number(el.dataset.v); renderSheet(); },
+  'fb-tag'(el) { const t = el.dataset.v, f = S.fb; f.tags = f.tags.includes(t) ? f.tags.filter(x => x !== t) : f.tags.concat([t]); renderSheet(); },
+  'fb-send'() { fbSend(); },
+  async 'fb-copy'() { try { await navigator.clipboard.writeText(fbText(S.fb)); toast('Copiado. Pégalo en un mensaje.'); } catch (e) { toast('No se pudo copiar: selecciona el texto y cópialo.'); } },
   'dr-extra'(el) { const k = el.dataset.k; S.dr.extra[k] = !S.dr.extra[k]; if (!S.dr.extra[k]) delete S.dr.pin[k]; S.dr.cyc = null; S.dr.enter = false; render(); },
   'dr-pin'(el) {
     const k = el.dataset.row; S.dr.pin[k] = !S.dr.pin[k]; if (!S.dr.pin[k]) delete S.dr.pin[k];
@@ -2708,6 +2945,11 @@ document.addEventListener('input', e => {
   else if (t.id === 'fab-size' && S.fab) { S.fab.s = Number(t.value) / 100; const b = $('#fab-box'); if (b && b._place) b._place(); }
   else if (t.id === 'f-dict') { S.dictQuery = t.value; render(); }
   else if (t.id === 'f-dq') { S.dq = t.value; S.dsearch = true; render(); }
+  else if ((t.id === 'fb-good' || t.id === 'fb-better') && S.fb) {
+    const was = !!(S.fb.rate || S.fb.tags.length || S.fb.good.trim() || S.fb.better.trim());
+    S.fb[t.id === 'fb-good' ? 'good' : 'better'] = t.value;
+    const b = document.querySelector('[data-action="fb-send"]'); if (b) b.disabled = !(S.fb.rate || S.fb.tags.length || S.fb.good.trim() || S.fb.better.trim());
+  }
   else if (t.id === 'f-search') { S.query = t.value; render(); }
   else if (t.id === 'd-name' && S.draft) S.draft.name = t.value;
   else if ((t.id === 'c-tol' || t.id === 'c-brush') && S.draft && S.draft.cut) {
