@@ -466,7 +466,7 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .stage { background: #2a2b2f; } }
 :root[data-theme="dark"] .stage { background: #2a2b2f; }
 .bgl, .layer { position: absolute; inset: 0; }
-.pz { position: absolute; aspect-ratio: 1; will-change: transform; }
+.pz { position: absolute; will-change: transform; }
 .pz svg, .pz img { width: 100%; height: 100%; display: block; -webkit-user-drag: none; }
 .pz svg { filter: drop-shadow(0 12px 10px rgba(0, 0, 0, .17)); }
 .pz.photo img { object-fit: contain; filter: drop-shadow(0 12px 10px rgba(0, 0, 0, .2)); }
@@ -1012,6 +1012,9 @@ const SHAPES = {
     parts: [{ d: 'M150 120 Q196 120 198 140 L150 140 Z', kind: 'pat' }],
     lines: 'M104 56 L104 132 M66 64 Q80 96 74 132 M142 64 Q128 96 134 132', dots: [[104, 56]] }
 };
+// Recuadro real que ocupa cada figura (x, y, ancho, alto) dentro de 200×200
+const SHAPE_BOX = {"camiseta": [7, 24, 186, 166], "camisa": [9, 20, 182, 175], "buzo": [11, 24, 178, 168], "chaqueta": [8, 18, 184, 176], "pantalon": [48, 12, 104, 184], "short": [36, 34, 128, 118], "falda": [28, 24, 144, 161], "vestido": [30, 10, 140, 189], "enterizo": [52, 10, 96, 186], "tenis": [14, 78, 181, 88], "botas": [40, 20, 152, 160], "bolso": [21, 21, 158, 165], "gorra": [30, 54, 168, 86]};
+function flatBox(shape) { const b = SHAPE_BOX[shape] || [0, 0, 200, 200], m = 7; return [b[0] - m, b[1] - m, b[2] + 2 * m, b[3] + 2 * m]; }
 const SHAPE_BY_CAT = { top: ['camiseta', 'camisa', 'buzo'], bottom: ['pantalon', 'short', 'falda'], dress: ['vestido', 'enterizo'], outer: ['chaqueta', 'buzo'], shoes: ['tenis', 'botas'], acc: ['bolso', 'gorra'] };
 const PATTERNS = [
   { id: 'liso', label: 'Liso' }, { id: 'rayas-h', label: 'Rayas' }, { id: 'rayas-v', label: 'Rayas verticales' },
@@ -1072,7 +1075,7 @@ function shadeHex(hex, d) {
   const n = parseInt(hex.slice(1), 16), f = v => Math.max(0, Math.min(255, v + d));
   return '#' + [f(n >> 16), f((n >> 8) & 255), f(n & 255)].map(v => v.toString(16).padStart(2, '0')).join('');
 }
-function flatSvg(g, look) {
+function flatSvg(g, look, tight) {
   look = look || lookOf(g);
   const sh = SHAPES[look.shape] || SHAPES.camiseta, cs = flatColors(g), n = ++FLAT_N;
   const pid = 'fp' + n, gid = 'fg' + n;
@@ -1084,7 +1087,7 @@ function flatSvg(g, look) {
     if (p.kind === 'shade') return `<path d="${p.d}" fill="url(#${pid})"/><path d="${p.d}" fill="rgba(0,0,0,.12)"/>`;
     return `<path d="${p.d}" fill="url(#${pid})"/><path d="${p.d}" fill="url(#${gid})"/>`;
   }).join('');
-  return `<svg class="flat" viewBox="0 0 200 200" role="img" aria-label="${esc((SHAPES[look.shape] || {}).label || 'Prenda')} planchada">
+  return `<svg class="flat" viewBox="${tight ? flatBox(look.shape).join(' ') : '0 0 200 200'}" role="img" aria-label="${esc((SHAPES[look.shape] || {}).label || 'Prenda')} planchada">
     <defs>${patternDef(pid, look, cs)}<linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".14"/></linearGradient></defs>
     ${sh.handle ? `<path d="${sh.handle}" fill="none" stroke="${cs[0].hex}" stroke-width="9" stroke-linecap="round"/><path d="${sh.handle}" fill="none" stroke="rgba(0,0,0,.15)" stroke-width="9" stroke-linecap="round"/>` : ''}
     <path d="${sh.body}" fill="url(#${pid})" stroke="rgba(0,0,0,.16)" stroke-width="1.2" stroke-linejoin="round"/>
@@ -1485,28 +1488,54 @@ const ARROW_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const ARROW_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 const GRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>';
 const SLIDERS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>';
-function pasLayout(pieces) {
-  const by = {}; pieces.forEach(g => { (by[g.category] = by[g.category] || []).push(g); });
-  const first = k => by[k] && by[k][0];
-  const dress = first('dress'), top = first('top'), bottom = first('bottom');
-  // La chaqueta va al centro solo si no hay otra parte de arriba
-  const outerMain = !top && !dress ? first('outer') : null;
-  const side = [[!outerMain && first('outer'), 4, 34, 0], [first('acc'), 37, 28, 1], [first('shoes'), 64, 32, 2]].filter(x => x[0]);
-  const out = [], put = (g, x, y, w, k) => out.push({ g, x, y, w, k });
-  const hasSide = side.length > 0, cx = hasSide ? 36 : 50;
-  if (dress) put(dress, cx, 4, hasSide ? 62 : 72, 0);
-  else {
-    const up = top || outerMain;
-    if (up) put(up, cx, 2, hasSide ? 52 : 58, 0);
-    if (bottom) put(bottom, cx, 47, hasSide ? 46 : 50, 1);
+/* Cada tipo de prenda tiene su recuadro invisible en el escenario.
+   Los recuadros se reparten según qué prendas trae la combinación. */
+const PAS_ORDER = { outer: 0, top: 0, dress: 0, bottom: 1, acc: 1, shoes: 2 };
+function pasCells(has) {
+  const C = {}, side = ['acc', 'shoes'].filter(k => has[k]);
+  const sideCells = (y0, keys) => {
+    const h = 100 - y0;
+    if (keys.length === 2) { C[keys[0]] = [62, y0, 38, h * .45]; C[keys[1]] = [62, y0 + h * .45, 38, h * .55]; }
+    else if (keys.length === 1) C[keys[0]] = keys[0] === 'shoes' ? [62, y0 + h * .4, 38, h * .55] : [62, y0 + h * .25, 38, h * .5];
+  };
+  if (has.dress) {
+    const right = (has.outer ? ['outer'] : []).concat(side);
+    if (!right.length) { C.dress = [8, 0, 84, 100]; return C; }
+    C.dress = [0, 0, 62, 100];
+    if (has.outer) { C.outer = [62, 0, 38, side.length ? 40 : 60]; sideCells(40, side); }
+    else sideCells(0, side);
+    return C;
   }
-  // Columna derecha: chaqueta, accesorio y zapatos, sin taparse con lo demás
-  side.forEach(([g, y, w, k]) => put(g, 82, y, w, k));
+  const both = has.top && has.outer, upper = has.top ? 'top' : has.outer ? 'outer' : null;
+  if (both) {
+    C.outer = [0, 0, 50, 44]; C.top = [50, 0, 50, 44];
+    if (has.bottom) C.bottom = side.length ? [0, 44, 62, 56] : [17, 44, 66, 56];
+    sideCells(44, side);
+  } else {
+    if (upper) C[upper] = side.length ? [0, 0, 62, 48] : [14, 0, 72, 48];
+    if (has.bottom) C.bottom = side.length ? [0, 47, 62, 53] : [17, 47, 66, 53];
+    if (!upper && !has.bottom) side.forEach((k, i) => { C[k] = [10, i * 50, 80, 50]; });
+    else sideCells(0, side);
+  }
+  return C;
+}
+function pasLayout(pieces) {
+  const has = {}, out = [];
+  pieces.forEach(g => { const k = PAS_ORDER[g.category] != null ? g.category : 'acc'; if (!has[k]) has[k] = g; });
+  const C = pasCells(has), AR = 1.25; // el escenario mide 4:5
+  for (const k of ['outer', 'top', 'dress', 'bottom', 'acc', 'shoes']) {
+    if (!has[k] || !C[k]) continue;
+    const [cx, cy, cw, ch] = C[k], g = has[k];
+    const flat = showsFlat(g), bx = flat ? flatBox(lookOf(g).shape) : [0, 0, 1, 1], a = bx[2] / bx[3];
+    // La prenda llena su recuadro sin deformarse (ancho en % del ancho, alto en % del alto)
+    const w = Math.min(cw, ch / AR * a) * .92, h = w / a * AR;
+    out.push({ g, flat, x: cx + (cw - w) / 2, y: cy + (ch - h) / 2, w, h, k: PAS_ORDER[k] });
+  }
   return out;
 }
 function pasPiece(p) {
-  const g = p.g, flat = showsFlat(g), src = gSrc(g);
-  return `<div class="pz${flat ? '' : g.cutout ? ' photo cut' : ' photo'}" data-k="${p.k}" style="left:${p.x - p.w / 2}%;top:${p.y}%;width:${p.w}%">${flat ? flatSvg(g) : `<img src="${esc(src)}" alt="" draggable="false"${g.assetId && g.thumb ? ` data-fb="${esc(g.thumb)}"` : ''}>`}</div>`;
+  const g = p.g, flat = p.flat, src = gSrc(g);
+  return `<div class="pz${flat ? '' : g.cutout ? ' photo cut' : ' photo'}" data-k="${p.k}" style="left:${p.x.toFixed(2)}%;top:${p.y.toFixed(2)}%;width:${p.w.toFixed(2)}%;height:${p.h.toFixed(2)}%">${flat ? flatSvg(g, null, true) : `<img src="${esc(src)}" alt="" draggable="false"${g.assetId && g.thumb ? ` data-fb="${esc(g.thumb)}"` : ''}>`}</div>`;
 }
 function pasLayer(o) {
   return `<div class="layer" role="img" aria-label="${esc(o.pieces.map(g => g.name).join(', '))}">${pasLayout(o.pieces).map(pasPiece).join('')}</div>`;
