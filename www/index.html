@@ -531,6 +531,42 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .dr-match b { display: block; font-family: var(--f-display); font-size: 18px; }
 .dr-match .muted { font-size: 13px; }
 @media (prefers-reduced-motion: reduce) { .dr-row.dr-enter { animation: none; } .dr-item { transition: none; } }
+
+/* ---------- Combinar: buscador, filtros y prendas fijadas ---------- */
+.dr-search { margin: 8px 0 12px; }
+.dr-search input { padding-right: 100px; text-overflow: ellipsis; }
+.dr-search.open input { padding-right: 140px; }
+.dr-search .sb-btns { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 2px; }
+.dr-search .sb-btn { position: relative; width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+.dr-search .sb-btn:hover { background: var(--paper); }
+.dr-search .sb-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.searchbar .sb-btn svg { position: static; transform: none; color: inherit; width: 21px; height: 21px; pointer-events: none; }
+.sb-btn .bdg { position: absolute; top: 3px; right: 1px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 10px; font-weight: 800; line-height: 16px; text-align: center; }
+.ds-cols { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 10px; margin: 0 -2px; }
+.ds-cols::-webkit-scrollbar { display: none; }
+.ds-col { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--c); cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
+.ds-col[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink); }
+.ds-col:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.ds-meta { display: flex; justify-content: space-between; align-items: center; margin: 4px 0 10px; font-size: 13px; color: var(--muted); }
+.ds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ds-card { position: relative; border: 0; padding: 0; background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); cursor: pointer; text-align: left; color: var(--ink); font: inherit; overflow: hidden; min-width: 0; }
+.ds-card .ds-img { display: block; aspect-ratio: 1; padding: 8%; background: #fbfbfa; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ds-card .ds-img { background: var(--paper); } }
+:root[data-theme="dark"] .ds-card .ds-img { background: var(--paper); }
+.ds-card .ds-img img, .ds-card .ds-img svg { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ds-card .ds-name { display: block; font-size: 12px; font-weight: 700; padding: 6px 8px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-card.on { box-shadow: 0 0 0 2px var(--ink); }
+.ds-card .ds-on { position: absolute; left: 6px; top: 6px; font-size: 10px; font-weight: 800; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 2px 7px; }
+.ds-pin { position: absolute; right: 4px; top: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .92); color: #1c1d21; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 4px rgba(0, 0, 0, .15); }
+.ds-pin svg, .dr-pin svg { width: 17px; height: 17px; }
+.ds-pin[aria-pressed="true"], .dr-pin[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.dr-row { position: relative; }
+.dr-pin { position: absolute; right: 10px; top: 8px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .9); color: #1c1d21; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 6px rgba(0, 0, 0, .14); }
+.dr-pin:focus-visible, .ds-pin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dr-row.pinned .dr-track { overflow-x: hidden; }
+.dr-row.pinned .dr-item:not(.cur) { opacity: .12; }
+.dr-pins { font-size: 13px; color: var(--muted); }
+.dr-pins b { color: var(--ink); }
 /* Saludo solo en Inicio */
 .wrap.sin-saludo { padding-top: 12px; }
 </style>
@@ -821,7 +857,7 @@ const EXAMPLES = [
 const S = {
   tab: 'closet', filter: 'all', T: 16, anchor: '',
   mode: 'loading', garments: [], outfits: [], loaded: false,
-  stack: [], draft: null, imagine: null, armed: null, dictQuery: '', favs: [], dictView: null, lookPref: 'photo', pasIdx: 0, pasRes: [], dr: { sel: {}, extra: { outer: false, acc: false }, last: null, cyc: null, init: false, progUntil: 0 }
+  stack: [], draft: null, imagine: null, armed: null, dictQuery: '', favs: [], dictView: null, lookPref: 'photo', pasIdx: 0, pasRes: [], dr: { sel: {}, pin: {}, extra: { outer: false, acc: false }, last: null, cyc: null, init: false, progUntil: 0 }, dq: '', dcat: '', dcol: null, dsearch: false
 };
 try { const p = JSON.parse(localStorage.getItem('closet-wada-prefs') || '{}'); if (p.T) S.T = p.T; if (p.tab) S.tab = p.tab; if (p.dictView) S.dictView = p.dictView; if (p.lookPref === 'flat' && p.lv === 2) S.lookPref = 'flat'; } catch (e) {}
 function savePrefs() { try { localStorage.setItem('closet-wada-prefs', JSON.stringify({ T: S.T, tab: S.tab, dictView: S.dictView, lookPref: S.lookPref, lv: 2 })); } catch (e) {} }
@@ -998,7 +1034,7 @@ async function loadDemo() {
     return true;
   } catch (e) { return false; }
 }
-function demoReset() { S.dr = { sel: {}, extra: { outer: false, acc: false }, last: null, cyc: null, init: false, progUntil: 0 }; S.pasIdx = 0; S.anchor = ''; S.colorF = null; }
+function demoReset() { S.dr = { sel: {}, pin: {}, extra: { outer: false, acc: false }, last: null, cyc: null, init: false, progUntil: 0 }; S.dq = ''; S.dcat = ''; S.dcol = null; S.dsearch = false; S.pasIdx = 0; S.anchor = ''; S.colorF = null; }
 function demoNote(where) {
   if (S.demo) return `<p class="note"><b>Clóset de prueba:</b> ${DEMO.length} prendas con fotos reales de un banco de imágenes libre. No se mezcla con tu ropa. <button class="linkbtn" data-action="demo-off">Salir</button></p>`;
   if (!usingExamples()) return '';
@@ -1266,10 +1302,11 @@ const CAT_ICON = {
 };
 function catIcon(id) { return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CAT_ICON[id]}</svg>`; }
 const SEARCH_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>`;
+function fold(t) { return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 function matchQuery(g, q) {
   if (!q) return true;
-  const hay = [g.name, CAT[g.category] ? CAT[g.category].chip : '', ...gColors(g).map(c => W[c.wada].name)].join(' ').toLowerCase();
-  return q.split(/\s+/).every(w => hay.includes(w));
+  const hay = fold([g.name, CAT[g.category] ? CAT[g.category].chip + ' ' + CAT[g.category].noun : '', ...gColors(g).map(c => W[c.wada].name + ' ' + colorWordEs(W[c.wada].lab))].join(' '));
+  return fold(q).split(/\s+/).filter(Boolean).every(w => hay.includes(w));
 }
 function addButtons() {
   return `<div class="actions">
@@ -1326,18 +1363,20 @@ function card(g) {
 function viewCombine() {
   if (!S.loaded) return loaderHtml('Cargando tu clóset…');
   const p = pool();
-  if (S.anchor && !p.find(g => g.id === S.anchor)) S.anchor = '';
-  const res = suggest(p, { T: S.T, anchorId: S.anchor, recent: recentKeys(), limit: 30 });
+  if (!S.dr.init) {
+    S.dr.init = true;
+    const first = suggest(p, { T: S.T, recent: recentKeys(), limit: 1 })[0];
+    if (first) { S.dr.extra.outer = first.pieces.some(g => g.category === 'outer'); S.dr.extra.acc = first.pieces.some(g => drRowOf(g) === 'acc'); first.pieces.forEach(g => { S.dr.sel[drRowOf(g)] = g.id; }); }
+  }
+  drRowsOn().forEach(k => { if (!drItems(k).length) delete S.dr.pin[k]; });
+  const res = drComplete();
   S.pasRes = res;
-  if (!S.dr.init) { S.dr.init = true; if (res[0]) { S.dr.extra.outer = res[0].pieces.some(g => g.category === 'outer'); S.dr.extra.acc = res[0].pieces.some(g => drRowOf(g) === 'acc'); res[0].pieces.forEach(g => { S.dr.sel[drRowOf(g)] = g.id; }); } }
-  const anchorG = S.anchor ? findG(S.anchor) : null;
+  if (!(S.pasIdx >= 0 && S.pasIdx < res.length)) S.pasIdx = 0;
+  if (S.dsearch) return drSearchBar(res.length) + drSearchHtml();
   const rows = drRowsOn();
   const chip = (k, l) => `<button class="chip" data-action="dr-extra" data-k="${k}" aria-pressed="${!!S.dr.extra[k]}">${S.dr.extra[k] ? '✓ ' : '+ '}${l}</button>`;
-  return `<div class="sec-head" style="margin-top:8px"><h2>Combinar</h2><div class="pas-tools">
-      ${res.length > 1 ? `<button class="btn small" data-action="pas-all">${GRID_SVG}Ver todas · ${res.length}</button>` : ''}
-      <button class="btn small" data-action="pas-adjust">${SLIDERS_SVG}Ajustar</button></div></div>
+  return `${drSearchBar(res.length)}
     ${demoNote('combine')}
-    ${anchorG ? `<div class="anchor-chip"><span>“Ver todas” parte de <b>${esc(anchorG.name)}</b></span><button class="x" data-action="clear-anchor" aria-label="Quitar la prenda de partida">×</button></div>` : ''}
     <div class="chips dr-chips" role="group" aria-label="Filas extra">${chip('outer', 'Saco')}${chip('acc', 'Accesorio')}</div>
     <section class="dr" id="dr" aria-label="Probador: una fila por tipo de prenda">${rows.map((k, i) => drRowHtml(k, i)).join('')}</section>
     <div class="dr-foot" id="dr-foot">${drFoot()}</div>`;
@@ -1659,6 +1698,93 @@ document.addEventListener('pointerup', e => {
 document.addEventListener('pointercancel', () => { PSW = null; });
 
 
+
+/* ---------- Fijar prendas y completar con Wada ---------- */
+const PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 5 3 3v2H7v-2l3-3z"/><path d="M12 14v7"/></svg>';
+const CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function bestIn(g, combo) { let w = null, d = Infinity; for (const c of combo.colors) { const x = dist(g, c); if (x < d) { d = x; w = c; } } return { w, d }; }
+function drPinned() { return drRowsOn().filter(k => S.dr.pin[k]).map(k => findG(S.dr.sel[k])).filter(Boolean); }
+// Arma outfits de Wada que respetan las prendas fijadas y completan las demás filas visibles
+function drComplete() {
+  const rows = drRowsOn(), T = S.T;
+  const pinned = drPinned();
+  const free = ['top', 'bottom', 'shoes', 'outer', 'acc'].filter(k => rows.includes(k) && !S.dr.pin[k]);
+  const curTop = findG(S.dr.sel.top), wantDress = curTop && curTop.category === 'dress';
+  const out = [];
+  for (const combo of COMBOS) {
+    let ok = true, sum = 0, n = 0, neu = 0;
+    const covered = new Set(), assign = [], pieces = [];
+    for (const g of pinned) {
+      const m = bestIn(g, combo);
+      if (m.d <= T) { covered.add(m.w); assign.push({ g, w: m.w, d: m.d }); sum += m.d; n++; }
+      else if (g.neutral) neu++;
+      else { ok = false; break; }
+      pieces.push(g);
+    }
+    if (!ok) continue;
+    let dress = pinned.some(g => g.category === 'dress');
+    for (const k of free) {
+      if (k === 'bottom' && dress) continue;
+      let cands = drItems(k);
+      if (k === 'top' && S.dr.pin.bottom) cands = cands.filter(g => g.category !== 'dress');
+      let best = null;
+      for (const g of cands) {
+        const m = bestIn(g, combo), fits = m.d <= T;
+        if (!fits && !g.neutral) continue;
+        const sc = (fits && !covered.has(m.w) ? -100 : 0) + (fits ? m.d : T + 2.5) + (k === 'top' && (g.category === 'dress') !== !!wantDress ? 1.5 : 0);
+        if (!best || sc < best.sc) best = { g, m, fits, sc };
+      }
+      if (!best) { if (k === 'outer' || k === 'acc') continue; ok = false; break; }
+      if ((k === 'outer' || k === 'acc') && !best.fits) continue;
+      pieces.push(best.g);
+      if (best.fits) { covered.add(best.m.w); assign.push({ g: best.g, w: best.m.w, d: best.m.d }); sum += best.m.d; n++; } else neu++;
+      if (k === 'top' && best.g.category === 'dress') dress = true;
+    }
+    if (!ok || !n) continue;
+    const missing = combo.colors.filter(w => !covered.has(w));
+    if (missing.length > 1) continue;
+    out.push({ combo, pieces, assign, missing, score: sum / n + neu * 2.5 + missing.length * 4, key: pieces.map(g => g.id).sort().join(',') });
+  }
+  out.sort((a, b) => a.score - b.score);
+  const seen = new Set();
+  return out.filter(o => !seen.has(o.key) && seen.add(o.key)).slice(0, 40);
+}
+function drSig() { return [drRowsOn().join(), drRowsOn().filter(k => S.dr.pin[k]).map(k => k + ':' + S.dr.sel[k]).join(), S.T].join('|'); }
+
+/* ---------- Buscador de prendas con filtros ---------- */
+function drSearchBar(nAll) {
+  return `<div class="searchbar dr-search${S.dsearch ? ' open' : ''}" role="search">${SEARCH_SVG}<input type="search" id="f-dq" placeholder="Busca: camisa, azul, falda…" value="${esc(S.dq)}" aria-label="Buscar en tus prendas" autocomplete="off">
+    <span class="sb-btns">
+      ${S.dsearch ? `<button class="sb-btn" data-action="ds-close" aria-label="Cerrar búsqueda">${CLOSE_SVG}</button>` : ''}
+      <button class="sb-btn" data-action="pas-all" aria-label="Ver todas las combinaciones (${nAll})">${GRID_SVG}${nAll ? `<span class="bdg">${nAll > 99 ? '99+' : nAll}</span>` : ''}</button>
+      <button class="sb-btn" data-action="pas-adjust" aria-label="Ajustar">${SLIDERS_SVG}</button>
+    </span></div>`;
+}
+function drSearchHtml() {
+  const all = pool();
+  const cols = [...new Set(all.map(mainW).filter(w => w != null))].sort((a, b) => hueKey({ colors: [{ wada: a, weight: 1 }] }) - hueKey({ colors: [{ wada: b, weight: 1 }] }));
+  const list = all.filter(g => (!S.dcat || g.category === S.dcat) && (S.dcol == null || gColors(g).some(c => c.wada === S.dcol)) && matchQuery(g, S.dq.trim()))
+    .sort((a, b) => realRank(a) - realRank(b) || hueKey(a) - hueKey(b));
+  const counts = {}; all.forEach(g => { counts[g.category] = (counts[g.category] || 0) + 1; });
+  const inRows = new Set(drRowsOn().map(k => S.dr.sel[k]));
+  const chip = (id, label, n) => `<button class="chip" data-action="ds-cat" data-c="${id}" aria-pressed="${S.dcat === id}">${label}${n != null ? `<span class="n">${n}</span>` : ''}</button>`;
+  return `<div class="chips" role="group" aria-label="Tipo de prenda" style="margin-bottom:10px">${chip('', 'Todas', all.length)}${CATS.filter(c => counts[c.id]).map(c => chip(c.id, c.chip, counts[c.id])).join('')}</div>
+    <div class="ds-cols" role="group" aria-label="Filtrar por color">${cols.map(w => `<button class="ds-col" style="--c:${W[w].hex}" data-action="ds-col" data-w="${w}" aria-pressed="${S.dcol === w}" aria-label="${esc(W[w].name)}" title="${esc(W[w].name)}"></button>`).join('')}</div>
+    <div class="ds-meta"><span>${list.length} ${list.length === 1 ? 'prenda' : 'prendas'}</span>${S.dcat || S.dcol != null || S.dq ? `<button class="linkbtn" data-action="ds-clear">Quitar filtros</button>` : ''}</div>
+    ${list.length ? `<div class="ds-grid">${list.map(g => { const k = drRowOf(g), on = inRows.has(g.id), pin = on && S.dr.pin[k]; return `<div class="ds-card${on ? ' on' : ''}" role="button" tabindex="0" data-action="ds-pick" data-id="${esc(g.id)}" aria-label="Probar ${esc(g.name)}">
+        <span class="ds-img">${drVisual(g)}</span><span class="ds-name">${esc(g.name)}</span>${on ? '<span class="ds-on">Puesta</span>' : ''}
+        <button class="ds-pin" data-action="ds-pin" data-id="${esc(g.id)}" aria-pressed="${!!pin}" aria-label="${pin ? 'Soltar' : 'Fijar'} ${esc(g.name)}">${PIN_SVG}</button></div>`; }).join('')}</div>`
+      : `<div class="empty">No encontré prendas con esos filtros.</div>`}`;
+}
+function drPut(g, pin) {
+  const k = drRowOf(g);
+  if (k === 'outer') S.dr.extra.outer = true;
+  if (k === 'acc') S.dr.extra.acc = true;
+  S.dr.sel[k] = g.id;
+  if (pin != null) S.dr.pin[k] = pin;
+  S.dr.cyc = null; S.dr.last = g.id;
+}
+
 /* ---------- Probador: una fila por tipo de prenda ---------- */
 const DR_ROWS = { outer: { label: 'Saco', h: 21, noun: 'un saco' }, top: { label: 'Arriba', h: 27, noun: 'una prenda de arriba' }, bottom: { label: 'Abajo', h: 30, noun: 'una prenda de abajo' }, shoes: { label: 'Zapatos', h: 12, noun: 'zapatos' }, acc: { label: 'Accesorio', h: 11, noun: 'un accesorio' } };
 const MAGIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v6M4 7h6M16 3l1.6 4.4L22 9l-4.4 1.6L16 15l-1.6-4.4L10 9l4.4-1.6z"/><path d="M8 14l1 2.6 2.6 1-2.6 1L8 21l-1-2.4-2.6-1 2.6-1z"/></svg>';
@@ -1706,7 +1832,9 @@ function drRowHtml(k, i) {
   const items = drItems(k), R = DR_ROWS[k];
   if (!items.length) return `<div class="dr-row" data-row="${k}" style="--h:${Math.min(R.h, 14)};--i:${i}"><div class="dr-empty">Aún no tienes ${R.noun}. <button class="btn small" data-action="dr-add" data-cat="${k}">Imaginar ${k === 'shoes' ? 'unos' : 'una'}</button></div></div>`;
   if (!items.some(g => g.id === S.dr.sel[k])) S.dr.sel[k] = items[0].id;
-  return `<div class="dr-row" data-row="${k}" style="--h:${R.h};--i:${i}">
+  const pin = !!S.dr.pin[k];
+  return `<div class="dr-row${pin ? ' pinned' : ''}" data-row="${k}" style="--h:${R.h};--i:${i}">
+    <button class="dr-pin" data-action="dr-pin" data-row="${k}" aria-pressed="${pin}" aria-label="${pin ? 'Soltar' : 'Fijar'} ${R.label.toLowerCase()}" title="${pin ? 'Soltar' : 'Fijar esta prenda'}">${PIN_SVG}</button>
     <div class="dr-track" tabindex="0" role="listbox" aria-label="${R.label}: desliza para cambiar de prenda">
       ${items.map(g => { const flat = showsFlat(g); return `<button class="dr-item${flat ? '' : g.cutout ? ' photo cut' : ' photo'}${g.id === S.dr.sel[k] ? ' cur' : ''}" role="option" aria-selected="${g.id === S.dr.sel[k]}" data-action="dr-tap" data-row="${k}" data-id="${esc(g.id)}" aria-label="${esc(g.name)}">${drVisual(g)}</button>`; }).join('')}
     </div></div>`;
@@ -1723,9 +1851,10 @@ function drFoot() {
     : `<div class="dr-match"><b>Mezcla libre</b><span class="muted">Esta mezcla no está en el diccionario de Wada. Toca ✦ para que Wada la complete.</span></div>`;
   return `<div class="dr-bar">
       <div>${usingExamples() || !key ? '' : `<button class="btn small${sv ? ' primary' : ''}" data-action="save-outfit" data-no="${no}" data-ids="${esc(key)}" aria-pressed="${!!sv}">${sv ? 'Guardado' : 'Guardar'}</button>`}</div>
-      <div><button class="dr-magic" data-action="dr-magic" aria-label="Completar con Wada">${MAGIC_SVG}</button><span class="dr-cap">Combinar con Wada</span></div>
+      <div><button class="dr-magic" data-action="dr-magic" aria-label="${drPinned().length ? 'Completar con Wada' : 'Combinar con Wada'}">${MAGIC_SVG}</button><span class="dr-cap">${drPinned().length ? 'Completar con Wada' : 'Combinar con Wada'}</span></div>
       ${pieces.length ? pinIcon([...new Set(wear.map(x => x.w).filter(w => w != null))]) : '<span></span>'}
     </div>
+    ${drPinned().length ? `<span class="dr-pins">Fijaste <b>${drPinned().map(g => esc(g.name)).join('</b>, <b>')}</b>. Wada completa el resto con ✦.</span>` : ''}
     ${strip}${head}
     <ul class="pas-list">${wear.map(x => `<li><i style="--c:${x.w != null ? W[x.w].hex : 'var(--line)'}"></i><button class="linkbtn" data-action="open-garment" data-id="${esc(x.g.id)}">${esc(x.g.name)}</button><span class="muted">${!m ? (x.w != null ? esc(W[x.w].name) : '') : x.a == null ? 'Neutro' : x.a === x.w ? esc(W[x.w].name) : `Hace de <i class="sm" style="--c:${W[x.a].hex}"></i>${esc(W[x.a].name)}`}</span></li>`).join('')}</ul>`;
 }
@@ -1782,8 +1911,8 @@ function mountDress(animate) {
 }
 function drApply(o, animate) {
   const before = drRowsOn().join();
-  S.dr.extra.outer = o.pieces.some(g => g.category === 'outer');
-  S.dr.extra.acc = o.pieces.some(g => drRowOf(g) === 'acc');
+  S.dr.extra.outer = o.pieces.some(g => g.category === 'outer') || !!(S.dr.extra.outer && S.dr.pin.outer);
+  S.dr.extra.acc = o.pieces.some(g => drRowOf(g) === 'acc') || !!(S.dr.extra.acc && S.dr.pin.acc);
   o.pieces.forEach(g => { S.dr.sel[drRowOf(g)] = g.id; });
   S.dr.progUntil = Date.now() + 1200;
   if (drRowsOn().join() !== before || !$('#dr')) { S.dr.enter = animate !== false; render(); return; }
@@ -1901,7 +2030,7 @@ const SHEETS = {
   },
   pasall() {
     const res = S.pasRes || [];
-    return { title: `${res.length} outfits posibles`, body: `<div class="pas-grid">${res.map((o, k) => `<button class="pas-mini${k === S.pasIdx ? ' cur' : ''}" data-action="pas-pick" data-k="${k}" aria-label="Outfit ${k + 1}, combinación ${o.combo.no}"><div class="stage"><div class="bgl" style="background:${pasBg(o)}"></div>${pasLayer(o)}</div>${pasStrip(o)}<span class="mini-no">N.º ${o.combo.no} · ${fitLabel(o.score)}</span></button>`).join('')}</div>` };
+    return { title: res.length === 1 ? '1 outfit posible' : `${res.length} outfits posibles`, body: `<div class="pas-grid">${res.map((o, k) => `<button class="pas-mini${k === S.pasIdx ? ' cur' : ''}" data-action="pas-pick" data-k="${k}" aria-label="Outfit ${k + 1}, combinación ${o.combo.no}"><div class="stage"><div class="bgl" style="background:${pasBg(o)}"></div>${pasLayer(o)}</div>${pasStrip(o)}<span class="mini-no">N.º ${o.combo.no} · ${fitLabel(o.score)}</span></button>`).join('')}</div>` };
   },
   pasadj() {
     const p = pool();
@@ -1911,7 +2040,7 @@ const SHEETS = {
     }));
     const lp = (v, l) => `<button class="chip" data-action="look-pref" data-v="${v}" aria-pressed="${S.lookPref === v}">${l}</button>`;
     return { title: 'Ajustar combinaciones', body: `
-      <div class="field"><label for="f-anchor">Partir de una prenda</label><select id="f-anchor">${opts.join('')}</select></div>
+      <p class="hint" style="margin:0">Para partir de una prenda, fíjala con 📌 en su fila: Wada completa el resto.</p>
       <div class="field"><label for="f-tol">¿Qué tan fiel a la paleta de Wada?</label>
         <input type="range" id="f-tol" min="8" max="30" step="1" value="${S.T}" aria-describedby="f-tol-h">
         <div class="adj-scale"><span>Muy fiel</span><span>Más opciones</span></div>
@@ -2376,14 +2505,31 @@ const A = {
   'pas-prev'() { pasGo(-1); },
   'pas-all'() { openSheet('pasall'); },
   'pas-adjust'() { openSheet('pasadj'); },
-  'pas-pick'(el) { S.pasIdx = Number(el.dataset.k); const o = S.pasRes[S.pasIdx]; closeAll(); window.scrollTo({ top: 0 }); if (o) { S.dr.cyc = null; drApply(o); } },
+  'pas-pick'(el) { S.pasIdx = Number(el.dataset.k); const o = S.pasRes[S.pasIdx]; closeAll(); S.dsearch = false; window.scrollTo({ top: 0 }); if (o) { S.dr.cyc = null; drApply(o); } },
   async 'demo-on'() {
     toast('Cargando el clóset de prueba…');
     if (!(await loadDemo())) { toast('No se pudo cargar el clóset de prueba.'); return; }
     S.demo = true; demoReset(); closeAll(); render(); window.scrollTo({ top: 0 }); toast(`Clóset de prueba: ${DEMO.length} prendas reales.`);
   },
   'demo-off'() { S.demo = false; demoReset(); closeAll(); render(); window.scrollTo({ top: 0 }); },
-  'dr-extra'(el) { const k = el.dataset.k; S.dr.extra[k] = !S.dr.extra[k]; S.dr.enter = false; render(); },
+  'dr-extra'(el) { const k = el.dataset.k; S.dr.extra[k] = !S.dr.extra[k]; if (!S.dr.extra[k]) delete S.dr.pin[k]; S.dr.cyc = null; S.dr.enter = false; render(); },
+  'dr-pin'(el) {
+    const k = el.dataset.row; S.dr.pin[k] = !S.dr.pin[k]; if (!S.dr.pin[k]) delete S.dr.pin[k];
+    S.dr.cyc = null; render();
+    const g = findG(S.dr.sel[k]);
+    if (g) toast(S.dr.pin[k] ? `Fijaste ${g.name}. Toca ✦ para completar con Wada.` : `Soltaste ${g.name}.`);
+  },
+  'ds-close'() { S.dsearch = false; render(); window.scrollTo({ top: 0 }); },
+  'ds-cat'(el) { S.dcat = el.dataset.c; render(); },
+  'ds-col'(el) { const w = Number(el.dataset.w); S.dcol = S.dcol === w ? null : w; render(); },
+  'ds-clear'() { S.dcat = ''; S.dcol = null; S.dq = ''; render(); },
+  'ds-pick'(el) { const g = findG(el.dataset.id); if (!g) return; drPut(g); S.dsearch = false; render(); window.scrollTo({ top: 0 }); toast(`Te pusiste ${g.name}.`); },
+  'ds-pin'(el) {
+    const g = findG(el.dataset.id); if (!g) return;
+    const k = drRowOf(g), on = S.dr.sel[k] === g.id && S.dr.pin[k];
+    if (on) { delete S.dr.pin[k]; toast(`Soltaste ${g.name}.`); } else { drPut(g, true); toast(`Fijaste ${g.name}.`); }
+    render();
+  },
   'dr-tap'(el) {
     const track = el.parentElement; if (track.dataset.justDragged) return;
     if (el.classList.contains('cur')) { openSheet('garment', { id: el.dataset.id }); return; }
@@ -2391,12 +2537,14 @@ const A = {
   },
   'dr-add'(el) { S.imagine = { category: el.dataset.cat, wada: null, name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
   'dr-magic'() {
-    const anchor = S.dr.last && pool().some(g => g.id === S.dr.last) ? S.dr.last : '';
-    const c = S.dr.cyc && S.dr.cyc.anchor === anchor ? S.dr.cyc : (S.dr.cyc = { anchor, list: suggest(pool(), { T: S.T, anchorId: anchor, recent: recentKeys(), limit: 30 }), i: -1 });
-    if (!c.list.length) { toast(anchor ? 'Wada no encontró cómo completar esa prenda. Prueba en Ajustar con una paleta menos estricta.' : 'No encontré combinaciones completas en tu clóset.'); return; }
+    const sig = drSig();
+    const c = S.dr.cyc && S.dr.cyc.sig === sig ? S.dr.cyc : (S.dr.cyc = { sig, list: drComplete(), i: -1 });
+    const pins = drPinned();
+    if (!c.list.length) { toast(pins.length ? 'Wada no encontró cómo completar lo que fijaste. Suelta una prenda o prueba en Ajustar.' : 'No encontré combinaciones completas en tu clóset.'); return; }
     c.i = (c.i + 1) % c.list.length;
     drApply(c.list[c.i]);
-    if (anchor && c.list.length > 1) toast(`Opción ${c.i + 1} de ${c.list.length} con ${findG(anchor).name}`);
+    S.dr.cyc.sig = drSig();
+    if (c.list.length > 1) toast(`Opción ${c.i + 1} de ${c.list.length}${pins.length ? ' con lo que fijaste' : ''}`);
   },
   'clear-anchor'() { S.anchor = ''; S.pasIdx = 0; render(); },
   'look-pref'(el) { S.lookPref = el.dataset.v; savePrefs(); render(); },
@@ -2484,7 +2632,7 @@ const A = {
     const id = S.stack[S.stack.length - 1].data.id;
     try { await Store.updateGarment(id, { category: el.dataset.cat }); } catch (e) { toast('No se pudo cambiar el tipo.'); }
   },
-  'combine-with'(el) { const g = findG(el.dataset.id); S.anchor = el.dataset.id; S.pasIdx = 0; S.tab = 'combine'; savePrefs(); closeAll(); S.dr.init = true; if (g) { S.dr.sel[drRowOf(g)] = g.id; S.dr.last = g.id; S.dr.cyc = null; } render(); window.scrollTo({ top: 0 }); if (g) A['dr-magic'](); },
+  'combine-with'(el) { const g = findG(el.dataset.id); S.tab = 'combine'; savePrefs(); closeAll(); S.dr.init = true; S.dsearch = false; if (g) { S.dr.pin = {}; drPut(g, true); } render(); window.scrollTo({ top: 0 }); if (g) A['dr-magic'](); },
   async archive(el) {
     const g = findG(el.dataset.id);
     try { await Store.updateGarment(g.id, { archived: !g.archived }); toast(g.archived ? 'La prenda volvió al clóset.' : 'Prenda archivada.'); closeAll(); }
@@ -2518,15 +2666,19 @@ document.addEventListener('click', e => {
   const fn = A[el.dataset.action];
   if (fn) { e.preventDefault(); fn(el); }
 });
+document.addEventListener('focusin', e => {
+  if (e.target && e.target.id === 'f-dq' && !S.dsearch) { S.dsearch = true; render(); const i = $('#f-dq'); if (i) i.focus(); }
+});
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'f-tol') {
     S.T = Number(t.value); savePrefs();
-    if (S.stack.length) { const n = $('#f-tol-n'); if (n) n.textContent = suggest(pool(), { T: S.T, anchorId: S.anchor, recent: recentKeys(), limit: 30 }).length; }
+    if (S.stack.length) { const n = $('#f-tol-n'); if (n) n.textContent = drComplete().length; }
     else render();
   }
   else if (t.id === 'fab-size' && S.fab) { S.fab.s = Number(t.value) / 100; const b = $('#fab-box'); if (b && b._place) b._place(); }
   else if (t.id === 'f-dict') { S.dictQuery = t.value; render(); }
+  else if (t.id === 'f-dq') { S.dq = t.value; S.dsearch = true; render(); }
   else if (t.id === 'f-search') { S.query = t.value; render(); }
   else if (t.id === 'd-name' && S.draft) S.draft.name = t.value;
   else if ((t.id === 'c-tol' || t.id === 'c-brush') && S.draft && S.draft.cut) {
