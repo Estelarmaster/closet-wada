@@ -563,8 +563,15 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .dr-row { position: relative; }
 .dr-pin { position: absolute; right: 10px; top: 8px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .9); color: #1c1d21; display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 6px rgba(0, 0, 0, .14); }
 .dr-pin:focus-visible, .ds-pin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.dr-row.pinned .dr-track { overflow-x: hidden; }
-.dr-row.pinned .dr-item:not(.cur) { opacity: .12; }
+.dr-row { transition: background-color .45s ease; }
+.dr-row.pinned { background-color: var(--pinbg); box-shadow: inset 0 10px 18px -12px rgba(0, 0, 0, .35), inset 0 -10px 18px -12px rgba(0, 0, 0, .35); }
+.dr-row.pinned .dr-track { overflow-x: hidden; touch-action: pan-y; }
+.dr-row.pinned .dr-item:not(.cur) { opacity: 0; }
+.dr-row.pinned .dr-item.cur { animation: pinSet .45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes pinSet { 0% { transform: scale(1.06); } 100% { transform: none; } }
+.dr-row.nudge .dr-item.cur { animation: pinNudge .38s ease; }
+@keyframes pinNudge { 20% { transform: translateX(-9px); } 45% { transform: translateX(7px); } 70% { transform: translateX(-4px); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dr-row.pinned .dr-item.cur, .dr-row.nudge .dr-item.cur { animation: none; } }
 .dr-pins { font-size: 13px; color: var(--muted); }
 .dr-pins b { color: var(--ink); }
 /* Saludo solo en Inicio */
@@ -1703,6 +1710,19 @@ document.addEventListener('pointercancel', () => { PSW = null; });
 const PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6l-1 5 3 3v2H7v-2l3-3z"/><path d="M12 14v7"/></svg>';
 const CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 function bestIn(g, combo) { let w = null, d = Infinity; for (const c of combo.colors) { const x = dist(g, c); if (x < d) { d = x; w = c; } } return { w, d }; }
+function pinColor(g) {
+  const w = mainW(g); if (w == null) return '#d9d6cf';
+  const L = W[w].lab[0];
+  const partners = [...new Set(W[w].combos.flatMap(no => COMBO_BY_NO[no].colors))].filter(i => i !== w);
+  let best = null, bs = -Infinity;
+  for (const i of partners) {
+    const [L2, a, b] = W[i].lab, dL = Math.abs(L2 - L), C = Math.hypot(a, b);
+    // que contraste con la prenda, con color propio y sin ser ni muy oscuro ni casi blanco
+    const sc = Math.min(dL, 45) + Math.min(C, 50) * .6 - (L2 < 22 || L2 > 92 ? 40 : 0);
+    if (sc > bs) { bs = sc; best = i; }
+  }
+  return best != null ? W[best].hex : (L > 55 ? '#3b4a5a' : '#e9dcc4');
+}
 function drPinned() { return drRowsOn().filter(k => S.dr.pin[k]).map(k => findG(S.dr.sel[k])).filter(Boolean); }
 // Arma outfits de Wada que respetan las prendas fijadas y completan las demás filas visibles
 function drComplete() {
@@ -1772,7 +1792,7 @@ function drSearchHtml() {
     <div class="ds-cols" role="group" aria-label="Filtrar por color">${cols.map(w => `<button class="ds-col" style="--c:${W[w].hex}" data-action="ds-col" data-w="${w}" aria-pressed="${S.dcol === w}" aria-label="${esc(W[w].name)}" title="${esc(W[w].name)}"></button>`).join('')}</div>
     <div class="ds-meta"><span>${list.length} ${list.length === 1 ? 'prenda' : 'prendas'}</span>${S.dcat || S.dcol != null || S.dq ? `<button class="linkbtn" data-action="ds-clear">Quitar filtros</button>` : ''}</div>
     ${list.length ? `<div class="ds-grid">${list.map(g => { const k = drRowOf(g), on = inRows.has(g.id), pin = on && S.dr.pin[k]; return `<div class="ds-card${on ? ' on' : ''}" role="button" tabindex="0" data-action="ds-pick" data-id="${esc(g.id)}" aria-label="Probar ${esc(g.name)}">
-        <span class="ds-img">${drVisual(g)}</span><span class="ds-name">${esc(g.name)}</span>${on ? '<span class="ds-on">Puesta</span>' : ''}
+        <span class="ds-img"${pin ? ` style="background:${pinColor(g)}"` : ''}>${drVisual(g)}</span><span class="ds-name">${esc(g.name)}</span>${on ? '<span class="ds-on">Puesta</span>' : ''}
         <button class="ds-pin" data-action="ds-pin" data-id="${esc(g.id)}" aria-pressed="${!!pin}" aria-label="${pin ? 'Soltar' : 'Fijar'} ${esc(g.name)}">${PIN_SVG}</button></div>`; }).join('')}</div>`
       : `<div class="empty">No encontré prendas con esos filtros.</div>`}`;
 }
@@ -1832,8 +1852,8 @@ function drRowHtml(k, i) {
   const items = drItems(k), R = DR_ROWS[k];
   if (!items.length) return `<div class="dr-row" data-row="${k}" style="--h:${Math.min(R.h, 14)};--i:${i}"><div class="dr-empty">Aún no tienes ${R.noun}. <button class="btn small" data-action="dr-add" data-cat="${k}">Imaginar ${k === 'shoes' ? 'unos' : 'una'}</button></div></div>`;
   if (!items.some(g => g.id === S.dr.sel[k])) S.dr.sel[k] = items[0].id;
-  const pin = !!S.dr.pin[k];
-  return `<div class="dr-row${pin ? ' pinned' : ''}" data-row="${k}" style="--h:${R.h};--i:${i}">
+  const pin = !!S.dr.pin[k], pg = pin ? findG(S.dr.sel[k]) : null;
+  return `<div class="dr-row${pin ? ' pinned' : ''}" data-row="${k}" style="--h:${R.h};--i:${i}${pg ? `;--pinbg:${pinColor(pg)}` : ''}">
     <button class="dr-pin" data-action="dr-pin" data-row="${k}" aria-pressed="${pin}" aria-label="${pin ? 'Soltar' : 'Fijar'} ${R.label.toLowerCase()}" title="${pin ? 'Soltar' : 'Fijar esta prenda'}">${PIN_SVG}</button>
     <div class="dr-track" tabindex="0" role="listbox" aria-label="${R.label}: desliza para cambiar de prenda">
       ${items.map(g => { const flat = showsFlat(g); return `<button class="dr-item${flat ? '' : g.cutout ? ' photo cut' : ' photo'}${g.id === S.dr.sel[k] ? ' cur' : ''}" role="option" aria-selected="${g.id === S.dr.sel[k]}" data-action="dr-tap" data-row="${k}" data-id="${esc(g.id)}" aria-label="${esc(g.name)}">${drVisual(g)}</button>`; }).join('')}
@@ -1854,7 +1874,6 @@ function drFoot() {
       <div><button class="dr-magic" data-action="dr-magic" aria-label="${drPinned().length ? 'Completar con Wada' : 'Combinar con Wada'}">${MAGIC_SVG}</button><span class="dr-cap">${drPinned().length ? 'Completar con Wada' : 'Combinar con Wada'}</span></div>
       ${pieces.length ? pinIcon([...new Set(wear.map(x => x.w).filter(w => w != null))]) : '<span></span>'}
     </div>
-    ${drPinned().length ? `<span class="dr-pins">Fijaste <b>${drPinned().map(g => esc(g.name)).join('</b>, <b>')}</b>. Wada completa el resto con ✦.</span>` : ''}
     ${strip}${head}
     <ul class="pas-list">${wear.map(x => `<li><i style="--c:${x.w != null ? W[x.w].hex : 'var(--line)'}"></i><button class="linkbtn" data-action="open-garment" data-id="${esc(x.g.id)}">${esc(x.g.name)}</button><span class="muted">${!m ? (x.w != null ? esc(W[x.w].name) : '') : x.a == null ? 'Neutro' : x.a === x.w ? esc(W[x.w].name) : `Hace de <i class="sm" style="--c:${W[x.a].hex}"></i>${esc(W[x.a].name)}`}</span></li>`).join('')}</ul>`;
 }
@@ -1886,6 +1905,17 @@ function mountDress(animate) {
   const rows = document.querySelectorAll('#dr .dr-row');
   rows.forEach(row => {
     const track = row.querySelector('.dr-track'); if (!track) return;
+    let px = null;
+    track.addEventListener('pointerdown', e => { if (row.classList.contains('pinned')) px = { x: e.clientX, y: e.clientY }; });
+    track.addEventListener('pointermove', e => {
+      if (!px || !row.classList.contains('pinned')) return;
+      if (Math.abs(e.clientX - px.x) > 14 && Math.abs(e.clientX - px.x) > Math.abs(e.clientY - px.y)) {
+        px = null; row.classList.remove('nudge'); void row.offsetWidth; row.classList.add('nudge');
+        track.dataset.justDragged = '1'; setTimeout(() => { delete track.dataset.justDragged; }, 450);
+        if (navigator.vibrate) try { navigator.vibrate(18); } catch (er) {}
+      }
+    });
+    track.addEventListener('pointerup', () => { px = null; });
     const k = row.dataset.row, cur = track.querySelector(`.dr-item[data-id="${CSS.escape(S.dr.sel[k] || '')}"]`) || track.querySelector('.dr-item');
     if (cur) drCenter(track, cur, false);
     if (animate) row.classList.add('dr-enter');
@@ -1896,7 +1926,7 @@ function mountDress(animate) {
     }, { passive: true });
     // Arrastrar con el mouse (en el celular el dedo ya desliza solo)
     let drag = null;
-    track.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; drag = { x: e.clientX, l: track.scrollLeft, moved: false }; });
+    track.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || row.classList.contains('pinned')) return; drag = { x: e.clientX, l: track.scrollLeft, moved: false }; });
     track.addEventListener('pointermove', e => {
       if (!drag) return; const dx = e.clientX - drag.x;
       if (Math.abs(dx) > 4) { drag.moved = true; track.classList.add('drag'); }
@@ -2517,7 +2547,6 @@ const A = {
     const k = el.dataset.row; S.dr.pin[k] = !S.dr.pin[k]; if (!S.dr.pin[k]) delete S.dr.pin[k];
     S.dr.cyc = null; render();
     const g = findG(S.dr.sel[k]);
-    if (g) toast(S.dr.pin[k] ? `Fijaste ${g.name}. Toca ✦ para completar con Wada.` : `Soltaste ${g.name}.`);
   },
   'ds-close'() { S.dsearch = false; render(); window.scrollTo({ top: 0 }); },
   'ds-cat'(el) { S.dcat = el.dataset.c; render(); },
@@ -2527,7 +2556,7 @@ const A = {
   'ds-pin'(el) {
     const g = findG(el.dataset.id); if (!g) return;
     const k = drRowOf(g), on = S.dr.sel[k] === g.id && S.dr.pin[k];
-    if (on) { delete S.dr.pin[k]; toast(`Soltaste ${g.name}.`); } else { drPut(g, true); toast(`Fijaste ${g.name}.`); }
+    if (on) delete S.dr.pin[k]; else drPut(g, true);
     render();
   },
   'dr-tap'(el) {
