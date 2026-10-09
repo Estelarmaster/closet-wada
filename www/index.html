@@ -980,9 +980,32 @@ function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3200);
 }
-function usingExamples() { return S.loaded && !S.garments.length; }
-function pool() { return (usingExamples() ? EXAMPLES : S.garments).filter(g => !g.archived); }
-function allGarments() { return usingExamples() ? EXAMPLES : S.garments; }
+function usingExamples() { return !!S.demo || (S.loaded && !S.garments.length); }
+function pool() { return allGarments().filter(g => !g.archived); }
+function allGarments() { return S.demo ? DEMO : usingExamples() ? EXAMPLES : S.garments; }
+/* ---------- Clóset de prueba: fotos reales de un dataset libre (CC0), sin tocar tu ropa ---------- */
+let DEMO = [];
+async function loadDemo() {
+  if (DEMO.length) return true;
+  try {
+    const r = await fetch('demo-closet.json'); if (!r.ok) throw new Error(r.status);
+    const items = await r.json();
+    DEMO = items.map((it, k) => ({
+      id: 'demo' + k, demo: true, example: true, name: it.name, category: it.category, imagined: false, cutout: true,
+      colors: it.colors.map(c => ({ wada: c.wada, lab: c.lab, hex: c.hex, measuredHex: null, weight: c.weight, de: c.de, manual: false })),
+      neutral: it.neutral, thumb: it.thumb, assetId: null, createdAt: 0, archived: false, look: { mode: 'photo', shape: it.shape, pattern: 'liso' }
+    }));
+    return true;
+  } catch (e) { return false; }
+}
+function demoReset() { S.dr = { sel: {}, extra: { outer: false, acc: false }, last: null, cyc: null, init: false, progUntil: 0 }; S.pasIdx = 0; S.anchor = ''; S.colorF = null; }
+function demoNote(where) {
+  if (S.demo) return `<p class="note"><b>Clóset de prueba:</b> ${DEMO.length} prendas con fotos reales de un banco de imágenes libre. No se mezcla con tu ropa. <button class="linkbtn" data-action="demo-off">Salir</button></p>`;
+  if (!usingExamples()) return '';
+  return where === 'closet'
+    ? `<p class="note"><b>Este es un clóset de ejemplo.</b> Toca el botón + para registrar tu primera prenda y verás las tuyas. <button class="linkbtn" data-action="demo-on">Ver uno con fotos reales</button></p>`
+    : `<p class="note"><b>Clóset de ejemplo.</b> Desliza cada fila para probar prendas. <button class="linkbtn" data-action="demo-on">Probar con fotos reales</button></p>`;
+}
 function findG(id) { return allGarments().find(g => g.id === id); }
 function gSrc(g) {
   if (g.assetId && g.assetId.startsWith('local:')) return LOCAL_URLS[g.assetId.slice(6)] || g.thumb || null;
@@ -1267,7 +1290,7 @@ function viewCloset() {
   const counts = {}; active.forEach(g => { counts[g.category] = (counts[g.category] || 0) + 1; });
   const title = S.filter === 'archived' ? 'Archivadas' : 'Tu clóset';
   return `${paletteHero()}
-    ${usingExamples() ? `<p class="note"><b>Este es un clóset de ejemplo.</b> Toca el botón + para registrar tu primera prenda y verás las tuyas.</p>` : ''}
+    ${demoNote('closet')}
     ${S.mode === 'local' && !IN_APP ? `<p class="note">Estás fuera de tu cuenta: las prendas se guardan solo en este navegador.</p>` : ''}
     <div class="sec-head"><h2>${title}</h2><span class="eyebrow">${list.length} ${list.length === 1 ? 'prenda' : 'prendas'}</span></div>
     ${S.filter !== 'archived' ? colorBar(active) : ''}
@@ -1311,7 +1334,7 @@ function viewCombine() {
   return `<div class="sec-head" style="margin-top:8px"><h2>Combinar</h2><div class="pas-tools">
       ${res.length > 1 ? `<button class="btn small" data-action="pas-all">${GRID_SVG}Ver todas · ${res.length}</button>` : ''}
       <button class="btn small" data-action="pas-adjust">${SLIDERS_SVG}Ajustar</button></div></div>
-    ${usingExamples() ? `<p class="note"><b>Clóset de ejemplo.</b> Desliza cada fila para probar prendas. Cuando registres las tuyas, verás tu ropa.</p>` : ''}
+    ${demoNote('combine')}
     ${anchorG ? `<div class="anchor-chip"><span>“Ver todas” parte de <b>${esc(anchorG.name)}</b></span><button class="x" data-action="clear-anchor" aria-label="Quitar la prenda de partida">×</button></div>` : ''}
     <div class="chips dr-chips" role="group" aria-label="Filas extra">${chip('outer', 'Saco')}${chip('acc', 'Accesorio')}</div>
     <section class="dr" id="dr" aria-label="Probador: una fila por tipo de prenda">${rows.map((k, i) => drRowHtml(k, i)).join('')}</section>
@@ -1504,6 +1527,7 @@ async function extractFabric() {
   if (ctx.kind === 'draft') {
     S.draft.look = L;
     const pv = $('#look-flat'); if (pv) pv.innerHTML = flatSvg(ctx.g, L);
+  } else if (ctx.g.demo) { ctx.g.look = L; render();
   } else if (!ctx.g.example) {
     try { await Store.updateGarment(ctx.g.id, { look: L }); } catch (e) { toast('No se pudo guardar la tela.'); }
   }
@@ -1891,7 +1915,9 @@ const SHEETS = {
         <div class="adj-scale"><span>Muy fiel</span><span>Más opciones</span></div>
         <span class="hint" id="f-tol-h"><span id="f-tol-n">${(S.pasRes || []).length}</span> outfits con este ajuste.</span></div>
       <div class="field"><span class="eyebrow">Mostrar mis prendas</span><div class="chips" role="group" aria-label="Mostrar mis prendas">${lp('auto', 'Como elegí en cada una')}${lp('flat', 'Todas planchadas')}${lp('photo', 'Todas en foto')}</div>
-        <span class="hint">Las prendas sin foto siempre se ven planchadas.</span></div>` };
+        <span class="hint">Las prendas sin foto siempre se ven planchadas.</span></div>
+      <div class="field"><span class="eyebrow">Clóset de prueba</span><div class="row"><button class="btn small${S.demo ? ' primary' : ''}" data-action="${S.demo ? 'demo-off' : 'demo-on'}">${S.demo ? 'Salir del clóset de prueba' : 'Usar clóset de prueba con fotos reales'}</button></div>
+        <span class="hint">Más de 50 prendas reales fotografiadas en casa, para ver cómo se ve la app con ropa de verdad. Tu clóset no cambia.</span></div>` };
   },
   draft() {
     const d = S.draft;
@@ -1968,9 +1994,9 @@ const SHEETS = {
     const armed = S.armed === 'del-' + g.id;
     return {
       title: esc(g.name),
-      body: `${ex ? `<div class="hero-look">${flatSvg(g)}</div>` : `<div class="field"><span class="eyebrow">Cómo se ve</span>${lookEditor({ kind: 'garment', g, look: lookOf(g), photo: gSrc(g), cutout: !!g.cutout })}
+      body: `${ex && !g.demo ? `<div class="hero-look">${flatSvg(g)}</div>` : `<div class="field"><span class="eyebrow">Cómo se ve</span>${lookEditor({ kind: 'garment', g, look: lookOf(g), photo: gSrc(g), cutout: !!g.cutout })}
           ${gSrc(g) && S.lookPref !== 'auto' ? `<span class="hint">Ahora mismo muestras todas las prendas ${S.lookPref === 'flat' ? 'planchadas' : 'en foto'} (Combinar › Ajustar). Lo que elijas aquí se usa con “Como elegí en cada una”.</span>` : ''}</div>`}
-        ${ex ? `<p class="note" style="margin:0">Es una prenda de ejemplo. Registra tus prendas para editarlas.</p>` : ''}
+        ${ex ? `<p class="note" style="margin:0">${g.demo ? 'Prenda del clóset de prueba: puedes plancharla para ver cómo queda, pero no se guarda.' : 'Es una prenda de ejemplo. Registra tus prendas para editarlas.'}</p>` : ''}
         ${ex ? '' : `<div class="field"><label for="g-name">Nombre</label><input type="text" id="g-name" maxlength="60" value="${esc(g.name)}" data-id="${esc(g.id)}"></div>`}
         <div class="field"><span class="eyebrow">Tipo${g.pattern ? ' · ' + esc(g.pattern) : ''}</span>${ex ? `<span>${CAT[g.category].chip}</span>` : catChips(g.category, 'garment-cat')}</div>
         <div class="field"><span class="eyebrow">Colores</span><div>${colorRows(g.colors, 'garment', !ex)}</div></div>
@@ -2349,6 +2375,12 @@ const A = {
   'pas-all'() { openSheet('pasall'); },
   'pas-adjust'() { openSheet('pasadj'); },
   'pas-pick'(el) { S.pasIdx = Number(el.dataset.k); const o = S.pasRes[S.pasIdx]; closeAll(); window.scrollTo({ top: 0 }); if (o) { S.dr.cyc = null; drApply(o); } },
+  async 'demo-on'() {
+    toast('Cargando el clóset de prueba…');
+    if (!(await loadDemo())) { toast('No se pudo cargar el clóset de prueba.'); return; }
+    S.demo = true; demoReset(); closeAll(); render(); window.scrollTo({ top: 0 }); toast(`Clóset de prueba: ${DEMO.length} prendas reales.`);
+  },
+  'demo-off'() { S.demo = false; demoReset(); closeAll(); render(); window.scrollTo({ top: 0 }); },
   'dr-extra'(el) { const k = el.dataset.k; S.dr.extra[k] = !S.dr.extra[k]; S.dr.enter = false; render(); },
   'dr-tap'(el) {
     const track = el.parentElement; if (track.dataset.justDragged) return;
@@ -2381,6 +2413,7 @@ const A = {
     const L = Object.assign({}, ctx.look, { [k]: v });
     if (k !== 'mode') L.mode = 'flat';
     if (ctx.kind === 'draft') { S.draft.look = L; renderSheet(); return; }
+    if (ctx.g.demo) { ctx.g.look = L; render(); return; }
     if (ctx.g.example) return;
     try { await Store.updateGarment(ctx.g.id, { look: L }); } catch (e) { toast('No se pudo actualizar.'); }
   },
