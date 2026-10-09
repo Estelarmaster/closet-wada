@@ -821,10 +821,10 @@ const EXAMPLES = [
 const S = {
   tab: 'closet', filter: 'all', T: 16, anchor: '',
   mode: 'loading', garments: [], outfits: [], loaded: false,
-  stack: [], draft: null, imagine: null, armed: null, dictQuery: '', favs: [], dictView: null, lookPref: 'auto', pasIdx: 0, pasRes: [], dr: { sel: {}, extra: { outer: false, acc: false }, last: null, cyc: null, init: false, progUntil: 0 }
+  stack: [], draft: null, imagine: null, armed: null, dictQuery: '', favs: [], dictView: null, lookPref: 'photo', pasIdx: 0, pasRes: [], dr: { sel: {}, extra: { outer: false, acc: false }, last: null, cyc: null, init: false, progUntil: 0 }
 };
-try { const p = JSON.parse(localStorage.getItem('closet-wada-prefs') || '{}'); if (p.T) S.T = p.T; if (p.tab) S.tab = p.tab; if (p.dictView) S.dictView = p.dictView; if (p.lookPref) S.lookPref = p.lookPref; } catch (e) {}
-function savePrefs() { try { localStorage.setItem('closet-wada-prefs', JSON.stringify({ T: S.T, tab: S.tab, dictView: S.dictView, lookPref: S.lookPref })); } catch (e) {} }
+try { const p = JSON.parse(localStorage.getItem('closet-wada-prefs') || '{}'); if (p.T) S.T = p.T; if (p.tab) S.tab = p.tab; if (p.dictView) S.dictView = p.dictView; if (p.lookPref === 'flat' && p.lv === 2) S.lookPref = 'flat'; } catch (e) {}
+function savePrefs() { try { localStorage.setItem('closet-wada-prefs', JSON.stringify({ T: S.T, tab: S.tab, dictView: S.dictView, lookPref: S.lookPref, lv: 2 })); } catch (e) {} }
 
 /* ---------- Guardado en el dispositivo (app Android o navegador) ---------- */
 const IN_APP = !!window.Capacitor;
@@ -982,7 +982,7 @@ function toast(msg) {
 }
 function usingExamples() { return !!S.demo || (S.loaded && !S.garments.length); }
 function pool() { return allGarments().filter(g => !g.archived); }
-function allGarments() { return S.demo ? DEMO : usingExamples() ? EXAMPLES : S.garments; }
+function allGarments() { return S.demo ? DEMO : usingExamples() ? (DEMO.length ? DEMO : EXAMPLES) : S.garments; }
 /* ---------- Clóset de prueba: fotos reales de un dataset libre (CC0), sin tocar tu ropa ---------- */
 let DEMO = [];
 async function loadDemo() {
@@ -1003,8 +1003,8 @@ function demoNote(where) {
   if (S.demo) return `<p class="note"><b>Clóset de prueba:</b> ${DEMO.length} prendas con fotos reales de un banco de imágenes libre. No se mezcla con tu ropa. <button class="linkbtn" data-action="demo-off">Salir</button></p>`;
   if (!usingExamples()) return '';
   return where === 'closet'
-    ? `<p class="note"><b>Este es un clóset de ejemplo.</b> Toca el botón + para registrar tu primera prenda y verás las tuyas. <button class="linkbtn" data-action="demo-on">Ver uno con fotos reales</button></p>`
-    : `<p class="note"><b>Clóset de ejemplo.</b> Desliza cada fila para probar prendas. <button class="linkbtn" data-action="demo-on">Probar con fotos reales</button></p>`;
+    ? `<p class="note"><b>Este es un clóset de ejemplo${DEMO.length ? ' con fotos reales' : ''}.</b> Toca el botón + para registrar tu primera prenda y verás las tuyas.</p>`
+    : `<p class="note"><b>Clóset de ejemplo${DEMO.length ? ' con fotos reales' : ''}.</b> Desliza cada fila para probar prendas.</p>`;
 }
 function findG(id) { return allGarments().find(g => g.id === id); }
 function gSrc(g) {
@@ -1086,7 +1086,7 @@ function lookOf(g) {
   const base = suggestLook(g), l = g.look || {};
   const shapes = SHAPE_BY_CAT[g.category] || SHAPE_BY_CAT.top;
   return {
-    mode: l.mode || (gSrc(g) ? 'photo' : 'flat'),
+    mode: !gSrc(g) || (l.mode === 'flat' && l.chosen) ? 'flat' : 'photo',
     shape: shapes.includes(l.shape) ? l.shape : base.shape,
     pattern: l.pattern || base.pattern,
     fabric: l.fabric || null
@@ -1095,8 +1095,8 @@ function lookOf(g) {
 function showsFlat(g) {
   if (!gSrc(g)) return true;
   if (S.lookPref === 'flat') return true;
-  if (S.lookPref === 'photo') return false;
-  return lookOf(g).mode === 'flat';
+  // Por defecto, la foto original; solo se ve planchada si la persona lo eligió en esa prenda
+  return !!(g.look && g.look.mode === 'flat' && g.look.chosen);
 }
 let FLAT_N = 0;
 function patternDef(id, look, cs) {
@@ -1525,7 +1525,7 @@ async function extractFabric() {
   }
   let url;
   try { url = c.toDataURL('image/jpeg', 0.82); } catch (e) { toast('No se pudo leer la tela de esta foto.'); return; }
-  const L = Object.assign({}, ctx.look, { mode: 'flat', pattern: 'tela', fabric: url, fabricSize: Math.round(Math.min(Math.max(f.s * 320, 40), 180)) });
+  const L = Object.assign({}, ctx.look, { mode: 'flat', chosen: true, pattern: 'tela', fabric: url, fabricSize: Math.round(Math.min(Math.max(f.s * 320, 40), 180)) });
   if (ctx.kind === 'draft') {
     S.draft.look = L;
     const pv = $('#look-flat'); if (pv) pv.innerHTML = flatSvg(ctx.g, L);
@@ -1916,10 +1916,10 @@ const SHEETS = {
         <input type="range" id="f-tol" min="8" max="30" step="1" value="${S.T}" aria-describedby="f-tol-h">
         <div class="adj-scale"><span>Muy fiel</span><span>Más opciones</span></div>
         <span class="hint" id="f-tol-h"><span id="f-tol-n">${(S.pasRes || []).length}</span> outfits con este ajuste.</span></div>
-      <div class="field"><span class="eyebrow">Mostrar mis prendas</span><div class="chips" role="group" aria-label="Mostrar mis prendas">${lp('auto', 'Como elegí en cada una')}${lp('photo', 'Todas en foto')}${lp('flat', 'Todas planchadas')}</div>
-        <span class="hint">Las prendas sin foto siempre se ven planchadas.</span></div>
-      <div class="field"><span class="eyebrow">Clóset de prueba</span><div class="row"><button class="btn small${S.demo ? ' primary' : ''}" data-action="${S.demo ? 'demo-off' : 'demo-on'}">${S.demo ? 'Salir del clóset de prueba' : 'Usar clóset de prueba con fotos reales'}</button></div>
-        <span class="hint">Más de 50 prendas reales fotografiadas en casa, para ver cómo se ve la app con ropa de verdad. Tu clóset no cambia.</span></div>` };
+      <div class="field"><span class="eyebrow">Mostrar mis prendas</span><div class="chips" role="group" aria-label="Mostrar mis prendas">${lp('photo', 'Fotos originales')}${lp('flat', 'Todas planchadas')}</div>
+        <span class="hint">Con fotos originales, solo se ven planchadas las prendas sin foto y las que planches tú desde su ficha.</span></div>
+      ${S.garments.length ? `<div class="field"><span class="eyebrow">Clóset de prueba</span><div class="row"><button class="btn small${S.demo ? ' primary' : ''}" data-action="${S.demo ? 'demo-off' : 'demo-on'}">${S.demo ? 'Salir del clóset de prueba' : 'Usar clóset de prueba con fotos reales'}</button></div>
+        <span class="hint">Más de 50 prendas reales fotografiadas en casa, para ver cómo se ve la app con ropa de verdad. Tu clóset no cambia.</span></div>` : ''}` };
   },
   draft() {
     const d = S.draft;
@@ -1997,7 +1997,7 @@ const SHEETS = {
     return {
       title: esc(g.name),
       body: `${ex && !g.demo ? `<div class="hero-look">${flatSvg(g)}</div>` : `<div class="field"><span class="eyebrow">Cómo se ve</span>${lookEditor({ kind: 'garment', g, look: lookOf(g), photo: gSrc(g), cutout: !!g.cutout })}
-          ${gSrc(g) && S.lookPref !== 'auto' ? `<span class="hint">Ahora mismo muestras todas las prendas ${S.lookPref === 'flat' ? 'planchadas' : 'en foto'} (Combinar › Ajustar). Lo que elijas aquí se usa con “Como elegí en cada una”.</span>` : ''}</div>`}
+          ${gSrc(g) && S.lookPref === 'flat' ? `<span class="hint">Ahora mismo todas las prendas se ven planchadas (Combinar › Ajustar).</span>` : ''}</div>`}
         ${ex ? `<p class="note" style="margin:0">${g.demo ? 'Prenda del clóset de prueba: puedes plancharla para ver cómo queda, pero no se guarda.' : 'Es una prenda de ejemplo. Registra tus prendas para editarlas.'}</p>` : ''}
         ${ex ? '' : `<div class="field"><label for="g-name">Nombre</label><input type="text" id="g-name" maxlength="60" value="${esc(g.name)}" data-id="${esc(g.id)}"></div>`}
         <div class="field"><span class="eyebrow">Tipo${g.pattern ? ' · ' + esc(g.pattern) : ''}</span>${ex ? `<span>${CAT[g.category].chip}</span>` : catChips(g.category, 'garment-cat')}</div>
@@ -2339,7 +2339,7 @@ async function saveDraft() {
     name: (d.name || '').trim() || `${CAT[d.category].noun} ${W[clean[0].wada].name}`,
     category: d.category, imagined: false, cutout: true, colors: clean, neutral: !!d.neutral,
     assetId: assetId || null, thumb: d.thumb, createdAt: Date.now(), archived: false,
-    look: d.look ? { mode: d.look.mode, shape: d.look.shape, pattern: d.look.pattern, fabric: d.look.pattern === 'tela' ? (d.look.fabric || null) : null, fabricSize: d.look.fabricSize || null } : null
+    look: d.look ? { mode: d.look.mode, chosen: !!d.look.chosen, shape: d.look.shape, pattern: d.look.pattern, fabric: d.look.pattern === 'tela' ? (d.look.fabric || null) : null, fabricSize: d.look.fabricSize || null } : null
   };
   try {
     const id = await Store.addGarment(doc);
@@ -2412,7 +2412,7 @@ const A = {
   async 'look-set'(el) {
     const ctx = lookCtx(); if (!ctx) return;
     const k = el.dataset.k, v = el.dataset.v;
-    const L = Object.assign({}, ctx.look, { [k]: v });
+    const L = Object.assign({}, ctx.look, { [k]: v, chosen: true });
     if (k !== 'mode') L.mode = 'flat';
     if (ctx.kind === 'draft') { S.draft.look = L; renderSheet(); return; }
     if (ctx.g.demo) { ctx.g.look = L; render(); return; }
@@ -2568,5 +2568,7 @@ if (window.Capacitor) {
 }
 render();
 Store.init();
+// El clóset de ejemplo usa fotos reales en cuanto cargan
+loadDemo().then(ok => { if (ok && usingExamples() && !S.demo) { demoReset(); render(); } });
 </script>
 </body></html>
