@@ -640,6 +640,15 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .fb-tags { display: flex; gap: 4px; flex-wrap: wrap; }
 .fb-tags span { font-size: 11.5px; font-weight: 700; background: var(--paper); border-radius: 999px; padding: 2px 8px; }
 .proto-ver { text-align: center; font-size: 12px; color: var(--muted); }
+/* ---------- Hojas que suben desde abajo ---------- */
+.sheet-bg { opacity: 0; transition: opacity .3s ease; }
+.sheet.in .sheet-bg { opacity: 1; }
+.sheet-panel { transform: translateY(100%); transition: transform .38s cubic-bezier(.2, .85, .25, 1); will-change: transform; overscroll-behavior: contain; }
+.sheet.in .sheet-panel { transform: translateY(0); }
+.sheet.dragging .sheet-panel { transition: none; }
+.sheet-head { padding-top: 22px; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.sheet-head::before { content: ""; position: absolute; left: 50%; top: 8px; width: 40px; height: 5px; margin-left: -20px; border-radius: 999px; background: var(--line); }
+@media (prefers-reduced-motion: reduce) { .sheet-panel, .sheet-bg { transition: none; } }
 /* Saludo solo en Inicio */
 .wrap.sin-saludo { padding-top: 12px; }
 </style>
@@ -2218,7 +2227,16 @@ function closeAll() { S.stack = []; S.armed = null; S.draft = null; S.imagine = 
 function renderSheet() {
   const sh = $('#sheet'), panel = $('#sheet-panel');
   const top = S.stack[S.stack.length - 1];
-  if (!top) { if (!sh.hidden) { sh.hidden = true; panel.innerHTML = ''; } return; }
+  if (!top) {
+    if (!sh.hidden && !sh.dataset.closing) {
+      // baja la hoja y luego la oculta
+      sh.dataset.closing = '1'; sh.classList.remove('in');
+      const done = () => { delete sh.dataset.closing; if (!S.stack.length) { sh.hidden = true; panel.innerHTML = ''; panel.style.transform = ''; } };
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) done(); else setTimeout(done, 300);
+    }
+    return;
+  }
+  delete sh.dataset.closing;
   const prevFocus = document.activeElement && document.activeElement.id;
   const scroll = panel.scrollTop;
   const back = S.stack.length > 1;
@@ -2229,6 +2247,7 @@ function renderSheet() {
   const wasHidden = sh.hidden;
   sh.hidden = false;
   panel.scrollTop = wasHidden ? 0 : scroll;
+  if (wasHidden || !sh.classList.contains('in')) { panel.style.transform = ''; void panel.offsetHeight; requestAnimationFrame(() => sh.classList.add('in')); }
   if (prevFocus) { const el = document.getElementById(prevFocus); if (el && panel.contains(el)) el.focus(); }
   if (top.type === 'draft' && S.draft && S.draft.step === 'cut') mountCutter();
   if ($('#fab-box')) mountFabric();
@@ -2932,6 +2951,27 @@ document.addEventListener('click', e => {
   const fn = A[el.dataset.action];
   if (fn) { e.preventDefault(); fn(el); }
 });
+let SHEET_DRAG = null;
+document.addEventListener('pointerdown', e => {
+  const head = e.target.closest && e.target.closest('.sheet-head');
+  if (!head || e.target.closest('button')) return;
+  const panel = $('#sheet-panel'); SHEET_DRAG = { y: e.clientY, dy: 0, panel };
+  $('#sheet').classList.add('dragging');
+});
+document.addEventListener('pointermove', e => {
+  if (!SHEET_DRAG) return;
+  SHEET_DRAG.dy = Math.max(0, e.clientY - SHEET_DRAG.y);
+  SHEET_DRAG.panel.style.transform = `translateY(${SHEET_DRAG.dy}px)`;
+});
+const endSheetDrag = () => {
+  if (!SHEET_DRAG) return;
+  const { dy, panel } = SHEET_DRAG; SHEET_DRAG = null;
+  $('#sheet').classList.remove('dragging');
+  if (dy > Math.min(140, panel.offsetHeight * .25)) { closeAll(); panel.style.transform = ''; }
+  else panel.style.transform = '';
+};
+document.addEventListener('pointerup', endSheetDrag);
+document.addEventListener('pointercancel', endSheetDrag);
 document.addEventListener('focusin', e => {
   if (e.target && e.target.id === 'f-dq' && !S.dsearch) { S.dsearch = true; render(); const i = $('#f-dq'); if (i) i.focus(); }
 });
