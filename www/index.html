@@ -417,6 +417,25 @@ h2.sec, .sec-head h2 { font-family: var(--f-display); font-weight: 800; font-siz
 .acc { height: 560px; }
 .acc .specs { top: 150px; }
 .acc .band.open .band-name { font-size: 28px; }
+/* Favoritos */
+.fav-ico { position: absolute; right: 16px; top: 16px; z-index: 2; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .92); display: grid; place-items: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, .14); transition: transform .15s; }
+.fav-ico svg { width: 22px; height: 22px; display: block; }
+.fav-ico:active { transform: scale(.88); }
+.fav-ico:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.band .fav-ico:not(.on) { background: transparent; box-shadow: none; color: var(--ink); }
+.band .fav-ico:not(.on) svg path { stroke: currentColor; }
+.fav-ico.on svg path { fill: #e0245e; stroke: #e0245e; }
+.band .pin-ico { right: 64px; }
+.band.no-fav .pin-ico { right: 16px; }
+.band-name { padding-right: 56px; }
+.fav-ico.pop { animation: favpop .35s ease; }
+@keyframes favpop { 40% { transform: scale(1.3); } }
+.dict-seg { display: flex; gap: 6px; margin: 4px 0 12px; }
+.fav-empty { text-align: center; padding: 26px 18px; border: 2px dashed var(--line); border-radius: 18px; color: var(--muted); }
+.fav-empty b { display: block; color: var(--ink); font-size: 17px; margin-bottom: 6px; }
+.fav-empty .fav-demo { display: inline-grid; vertical-align: middle; position: static; width: 30px; height: 30px; margin: 0 2px; pointer-events: none; }
+.fav-empty .fav-demo svg { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: reduce) { .fav-ico.pop { animation: none; } }
 /* Saludo solo en Inicio */
 .wrap.sin-saludo { padding-top: 12px; }
 </style>
@@ -707,10 +726,10 @@ const EXAMPLES = [
 const S = {
   tab: 'closet', filter: 'all', T: 16, anchor: '',
   mode: 'loading', garments: [], outfits: [], loaded: false,
-  stack: [], draft: null, imagine: null, armed: null, dictQuery: ''
+  stack: [], draft: null, imagine: null, armed: null, dictQuery: '', favs: [], dictView: null
 };
-try { const p = JSON.parse(localStorage.getItem('closet-wada-prefs') || '{}'); if (p.T) S.T = p.T; if (p.tab) S.tab = p.tab; } catch (e) {}
-function savePrefs() { try { localStorage.setItem('closet-wada-prefs', JSON.stringify({ T: S.T, tab: S.tab })); } catch (e) {} }
+try { const p = JSON.parse(localStorage.getItem('closet-wada-prefs') || '{}'); if (p.T) S.T = p.T; if (p.tab) S.tab = p.tab; if (p.dictView) S.dictView = p.dictView; } catch (e) {}
+function savePrefs() { try { localStorage.setItem('closet-wada-prefs', JSON.stringify({ T: S.T, tab: S.tab, dictView: S.dictView })); } catch (e) {} }
 
 /* ---------- Guardado en el dispositivo (app Android o navegador) ---------- */
 const IN_APP = !!window.Capacitor;
@@ -763,6 +782,8 @@ const Store = {
       const base = db.doc('data/users/' + uid + '/closet');
       this.gCol = base.collection('garments');
       this.oCol = base.collection('outfits');
+      this.favDoc = base.collection('prefs').doc('colores');
+      this.favDoc.onSnapshot(s => { const d = s.exists ? s.data() : null; S.favs = d && Array.isArray(d.favs) ? d.favs.slice() : []; render(); }, () => {});
       S.mode = 'cloud';
       this.gCol.onSnapshot(s => {
         S.garments = s.docs.map(d => Object.assign({ id: d.id }, d.data()));
@@ -780,20 +801,29 @@ const Store = {
         this.idb = true;
         try {
           const d = (await IDB.get('kv', 'data')) || legacy;
-          S.garments = d.garments || []; S.outfits = d.outfits || [];
+          S.garments = d.garments || []; S.outfits = d.outfits || []; S.favs = d.favs || [];
           const photos = await IDB.all('photos');
           for (const k in photos) LOCAL_URLS[k] = URL.createObjectURL(photos[k]);
         } catch (e) { S.garments = legacy.garments || []; S.outfits = legacy.outfits || []; }
-      } else { S.garments = legacy.garments || []; S.outfits = legacy.outfits || []; }
+      } else { S.garments = legacy.garments || []; S.outfits = legacy.outfits || []; S.favs = legacy.favs || []; }
       S.loaded = true;
     }
     render();
   },
   persistLocal() {
-    const data = { garments: S.garments, outfits: S.outfits };
+    const data = { garments: S.garments, outfits: S.outfits, favs: S.favs };
     if (this.idb) { IDB.put('kv', 'data', data).catch(() => toast('No hay espacio para guardar más prendas.')); return; }
     try { localStorage.setItem('closet-wada-data', JSON.stringify(data)); }
     catch (e) { toast('No hay espacio en este navegador para guardar más fotos.'); }
+  },
+  favChain: Promise.resolve(),
+  saveFavs() {
+    if (S.mode === 'cloud' && this.favDoc) {
+      const favs = S.favs.slice();
+      this.favChain = this.favChain.then(() => this.favDoc.set({ favs })).catch(() => toast('No se pudo guardar el favorito.'));
+      return;
+    }
+    this.persistLocal();
   },
   async addGarment(doc) {
     if (S.mode === 'cloud') { const ref = await this.gCol.add(doc); return ref.id; }
@@ -1093,11 +1123,23 @@ function savedCard(o) {
 
 function viewDict() {
   const q = S.dictQuery.trim().toLowerCase();
-  const list = W.filter(w => !q || [w.name, colorWordEs(w.lab), ...DESC[w.i]].join(' ').toLowerCase().includes(q));
-  return `<div class="sec-head" style="margin-top:8px"><h2>Colores de Wada</h2><span class="eyebrow">${list.length} de 159</span></div>
-    <div class="searchbar" style="margin-top:4px">${SEARCH_SVG}<input type="search" id="f-dict" placeholder="Busca: rosado, calma, verano…" value="${esc(S.dictQuery)}" aria-label="Buscar color"></div>
-    ${list.length ? `<div class="bands-list">${list.map(w => bandHtml(w.i, { open: S.openBand === w.i, action: 'band', ink: DICT_INK[w.i], kicker: `Color ${String(w.i + 1).padStart(3, '0')}` })).join('')}</div>`
-      : `<div class="empty">No encontré colores con esa búsqueda.</div>`}`;
+  const nf = S.favs.length;
+  const view = S.dictView || (nf ? 'fav' : 'all');
+  const base = view === 'fav' ? S.favs.map(i => W[i]).filter(Boolean) : W;
+  const list = base.filter(w => !q || [w.name, colorWordEs(w.lab), ...DESC[w.i]].join(' ').toLowerCase().includes(q));
+  const demo = `<span class="fav-ico fav-demo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${HEART_PATH}" fill="none" stroke="#1d1d1f" stroke-width="2" stroke-linejoin="round"/></svg></span>`;
+  let body;
+  if (list.length) body = `<div class="bands-list">${list.map(w => bandHtml(w.i, { open: S.openBand === w.i, action: 'band', fav: true, ink: DICT_INK[w.i], kicker: `Color ${String(w.i + 1).padStart(3, '0')}` })).join('')}</div>`;
+  else if (view === 'fav' && !nf) body = `<div class="fav-empty"><b>Aún no tienes colores favoritos</b>Ve a “Todos” y toca el corazón ${demo} en los colores que más te gusten. Aquí te quedarán a la mano, sin tener que recorrer los 159.<div style="margin-top:14px"><button class="btn primary small" data-action="dict-view" data-v="all">Explorar los 159 colores</button></div></div>`;
+  else if (view === 'fav') body = `<div class="empty">Ninguno de tus favoritos coincide con “${esc(S.dictQuery)}”. <button class="linkbtn" data-action="dict-view" data-v="all">Buscar en todos</button></div>`;
+  else body = `<div class="empty">No encontré colores con esa búsqueda.</div>`;
+  return `<div class="sec-head" style="margin-top:8px"><h2>Colores de Wada</h2><span class="eyebrow">${view === 'fav' ? `${list.length} favorito${list.length === 1 ? '' : 's'}` : `${list.length} de 159`}</span></div>
+    <div class="chips dict-seg" role="group" aria-label="Qué colores ver">
+      <button class="chip" data-action="dict-view" data-v="fav" aria-pressed="${view === 'fav'}">♥ Mis favoritos<span class="n">${nf}</span></button>
+      <button class="chip" data-action="dict-view" data-v="all" aria-pressed="${view === 'all'}">Todos<span class="n">159</span></button>
+    </div>
+    ${view === 'fav' && !nf ? '' : `<div class="searchbar" style="margin-top:4px">${SEARCH_SVG}<input type="search" id="f-dict" placeholder="${view === 'fav' ? 'Busca en tus favoritos…' : 'Busca: rosado, calma, verano…'}" value="${esc(S.dictQuery)}" aria-label="Buscar color"></div>`}
+    ${body}`;
 }
 
 /* ---------- Ideas para una prenda (funciona aunque el clóset esté vacío) ---------- */
@@ -1185,10 +1227,17 @@ function inkAmong(i, candidates) {
 /* Descripción amigable de cada color: frase, qué transmite, a qué recuerda, en qué lucirlo */
 const DESC = [["Un rubor suave que endulza cualquier look.", "Ternura", "Pétalos de cerezo", "Una blusa ligera de día"], ["Rosa empolvado, coqueto sin hacer ruido.", "Calma romántica", "Algodón de azúcar", "Un suéter tejido"], ["Un rosa antiguo con aire de camafeo.", "Nostalgia elegante", "Joyas de la abuela", "Un vestido midi"], ["Un nude cálido que se funde con la piel.", "Serenidad", "Café con mucha leche", "Una gabardina liviana"], ["Malva tostado, discreto y muy sofisticado.", "Madurez tranquila", "Rosas secas", "Un pantalón de lino"], ["Coral vibrante que sabe a vacaciones.", "Alegría", "Arrecifes al atardecer", "Una camisa de playa"], ["Durazno encendido, fresco y optimista.", "Energía amable", "Mango maduro", "Un top de verano"], ["Un salmón intenso con mucha personalidad.", "Entusiasmo", "Granadina con hielo", "Una falda que se mueva"], ["Rosa chicle que no pide permiso.", "Diversión", "Chicle de fresa", "Unos tenis o un bolso"], ["Fucsia suave con chispa de joya.", "Coquetería", "Flores de buganvilia", "Un accesorio llamativo"], ["Rosa viejo, romántico y con historia.", "Dulzura madura", "Cartas de amor", "Una blusa con lazo"], ["Rojo coral que calienta el ambiente.", "Pasión alegre", "Sandía fresca", "Un vestido de fiesta"], ["Rojo frambuesa, vivo y seguro de sí.", "Confianza", "Frambuesas", "Una chaqueta corta"], ["Tierra tostada que huele a otoño y canela.", "Calidez", "Canela y hojas secas", "Unas botas de cuero"], ["Naranja óxido con alma de taller artesanal.", "Creatividad", "Barro cocido", "Una camisa de pana"], ["Naranja fuego que enciende cualquier outfit.", "Audacia", "Una fogata", "Un solo detalle potente"], ["El rojo puro de un semáforo: imposible no mirarlo.", "Poder", "Un labial rojo", "La prenda protagonista"], ["Bermellón ardiente lleno de energía.", "Impulso", "Chiles maduros", "Un buzo deportivo"], ["Rojo terracota de vasija antigua.", "Calor de hogar", "Tejas de barro", "Un vestido de lino"], ["Óxido profundo, rústico y con carácter.", "Firmeza", "Ladrillo al sol", "Una chaqueta de gamuza"], ["Rojo apagado, terroso y fácil de llevar.", "Equilibrio", "Tierra roja", "Un cárdigan"], ["Escarlata elegante, rojo de alfombra roja.", "Glamour", "Rosas rojas", "Un vestido de noche"], ["Carmín intenso, el rojo del corazón.", "Amor y deseo", "Cerezas brillantes", "Unos zapatos rojos"], ["Frambuesa profunda con aire bohemio.", "Misterio dulce", "Moras y vino", "Una falda larga"], ["Magenta suave, femenino y atrevido.", "Seguridad", "Orquídeas", "Una blusa satinada"], ["Rojo granada, jugoso y apasionado.", "Intensidad", "Una granada abierta", "Un abrigo llamativo"], ["Rosa vino, sobrio y encantador.", "Elegancia cálida", "Hortensias de otoño", "Un suéter de cuello alto"], ["Ladrillo clásico, sólido y confiable.", "Estabilidad", "Casas de barrio antiguo", "Una camisa de franela"], ["Rojo cereza oscuro, el rojo de los clásicos.", "Elegancia", "Vino tinto", "Un saco o blazer"], ["Rojo de fresco romano, intenso y noble.", "Determinación", "Murales antiguos", "Un pantalón de tela"], ["Un rojo vino profundo que se siente lujoso.", "Sofisticación", "Terciopelo", "Un vestido de terciopelo"], ["Café chocolate, cálido y acogedor.", "Confort", "Chocolate caliente", "Unas botas o un cinturón"], ["Óxido rojizo con espíritu de campo.", "Autenticidad", "Hojas de roble", "Una chaqueta de trabajo"], ["Rojo sangre de toro, serio y poderoso.", "Autoridad", "Cuero envejecido", "Un bolso de cuero"], ["Borgoña profundo, el tinto del clóset.", "Lujo discreto", "Vino de reserva", "Un abrigo largo"], ["Granate oscuro, intenso y sereno a la vez.", "Profundidad", "Mermelada de mora", "Un suéter grueso"], ["Ciruela madura, misteriosa y elegante.", "Introspección", "Ciruelas maduras", "Una prenda de noche"], ["Malva oscuro, como un atardecer nublado.", "Melancolía bonita", "Té de frutos rojos", "Un pantalón de pinzas"], ["Crema luminosa, como la luz de la mañana.", "Paz", "Vainilla", "Una camisa amplia"], ["Amarillo pastel que se siente como un día soleado.", "Optimismo suave", "Limonada", "Un top de algodón"], ["Amarillo mantequilla, tierno y luminoso.", "Calidez amable", "Pan recién horneado", "Un vestido camisero"], ["Marfil arena, la base que combina con todo.", "Naturalidad", "Dunas de playa", "Una camiseta básica"], ["Durazno pálido como el interior de una concha.", "Delicadeza", "Conchas de mar", "Una blusa vaporosa"], ["Durazno suave con un toque de especia.", "Cercanía", "Galletas de canela", "Un suéter liviano"], ["Caramelo claro, dulce y acogedor.", "Calidez", "Arequipe", "Un cárdigan amplio"], ["Albaricoque luminoso que da buena cara.", "Vitalidad", "Albaricoques", "Una camisa de lino"], ["Amarillo miel que ilumina el día.", "Felicidad", "Miel y sol", "Un vestido de verano"], ["Naranja dorado de atardecer en la costa.", "Entusiasmo", "Una puesta de sol", "Una falda plisada"], ["Salmón empolvado, cálido y femenino.", "Dulzura", "Melocotón en almíbar", "Una blusa de seda"], ["Camel rosado, elegante y fácil de combinar.", "Sencillez", "Arena tostada", "Un abrigo camel"], ["Beige dorado con aire de safari.", "Aventura tranquila", "Paja seca", "Un pantalón cargo"], ["Caramelo suave como jarabe de arce.", "Calidez", "Jarabe de arce", "Un blazer de pana"], ["Verde salvia pálido, natural y sereno.", "Frescura", "Hojas de olivo", "Una camisa de lino"], ["Crudo natural, como tela sin teñir.", "Simplicidad", "Lino crudo", "Un pantalón amplio"], ["Amarillo puro, pura energía eléctrica.", "Alegría total", "Un rayo de sol", "Un detalle pequeño"], ["Limón brillante, ácido y divertido.", "Frescura", "Limones recién cortados", "Unos tenis o una gorra"], ["Amarillo yema, cálido y lleno de vida.", "Optimismo", "Girasoles", "Un impermeable"], ["Mostaza dorada con brillo de oro viejo.", "Riqueza discreta", "Oro antiguo", "Un suéter de punto"], ["Mostaza luminosa con estilo retro.", "Nostalgia alegre", "Mostaza de Dijon", "Una falda midi"], ["Ocre soleado como un campo de trigo.", "Abundancia", "Trigo maduro", "Una camisa estampada"], ["Mandarina dorada, chispeante y feliz.", "Entusiasmo", "Jugo de naranja", "Una prenda deportiva"], ["Naranja calabaza, juguetón y cálido.", "Diversión", "Calabazas", "Una chaqueta corta"], ["Mandarina suave, simpática y cercana.", "Simpatía", "Mandarinas", "Una blusa ligera"], ["Naranja puro, el color de la energía.", "Energía", "Naranjas jugosas", "Un buzo con capota"], ["Naranja tomate, intenso y veraniego.", "Vitalidad", "Tomates maduros", "Un vestido de playa"], ["Naranja ladrillo con carácter británico.", "Seguridad", "Los buses de Londres", "Un suéter de lana"], ["Canela tostada, cálida y otoñal.", "Calma cálida", "Rollos de canela", "Una gabardina"], ["Cobre brillante, terroso y vivo.", "Vitalidad terrenal", "Ollas de cobre", "Unas botas"], ["Mostaza oliva, retro y muy setentero.", "Personalidad", "Los años 70", "Una camisa de cuello amplio"], ["Ámbar tostado, robusto y aventurero.", "Resistencia", "Whisky añejo", "Una chaqueta utilitaria"], ["Verde lima apagado, fresco y original.", "Originalidad", "Aceitunas verdes", "Un pantalón chino"], ["Oliva dorado, natural y elegante.", "Equilibrio", "Aceite de oliva", "Un vestido camisero"], ["Caqui oliva, sobrio y muy versátil.", "Practicidad", "Uniformes de campo", "Un pantalón cargo"], ["Verde musgo grisáceo, tranquilo y urbano.", "Serenidad", "Piedras con musgo", "Una chaqueta liviana"], ["Oliva gris, discreto y relajado.", "Calma", "Hierbas secas", "Un suéter básico"], ["Verde salvia oscuro, natural y elegante.", "Armonía", "Salvia del jardín", "Una camisa de lino"], ["Oliva clásico, el verde más fácil de vestir.", "Estabilidad", "Olivares", "Una chaqueta militar"], ["Bronce cálido con alma de otoño.", "Calidez", "Miel oscura", "Un cinturón o un bolso"], ["Terracota suave, cálido y amable.", "Cercanía", "Macetas de barro", "Un vestido de punto"], ["Verde oliva profundo, natural y sereno.", "Equilibrio", "Un bosque en otoño", "Un pantalón o chaqueta"], ["Café verdoso, terroso y discreto.", "Sencillez", "Corteza de árbol", "Un abrigo de lana"], ["Oliva oscuro, sobrio y con fuerza.", "Firmeza", "Hojas de té", "Una chaqueta de campo"], ["Café nuez, cálido y elegante.", "Confianza", "Nueces tostadas", "Unos zapatos de cuero"], ["Sepia de foto antigua, nostálgico y cálido.", "Nostalgia", "Fotos de los abuelos", "Una chaqueta de gamuza"], ["Café rojizo, intenso y otoñal.", "Pasión serena", "Castañas asadas", "Un suéter de cuello alto"], ["Tabaco profundo, cálido y con carácter.", "Seguridad", "Cuero de silla de montar", "Unas botas"], ["Café espresso, oscuro y elegante.", "Solidez", "Café recién molido", "Un pantalón de vestir"], ["Verde menta pastel, fresco como la brisa.", "Frescura", "Helado de menta", "Una blusa liviana"], ["Verde agua grisáceo, sereno y limpio.", "Calma", "Eucalipto", "Una camisa de algodón"], ["Salvia pálido, natural y relajante.", "Descanso", "Hojas de salvia", "Un vestido suelto"], ["Verde limón fresco, primaveral y alegre.", "Renovación", "Brotes nuevos", "Un top de verano"], ["Verde pera, ácido y juvenil.", "Juventud", "Peras verdes", "Un accesorio llamativo"], ["Verde hoja vibrante, lleno de vida.", "Vitalidad", "Pasto recién cortado", "Una prenda deportiva"], ["Oliva claro, tranquilo y natural.", "Serenidad", "Té verde", "Un pantalón amplio"], ["Verde gris azulado, sofisticado y calmado.", "Introspección", "Hojas de ajenjo", "Un abrigo largo"], ["Gris verdoso, urbano y elegante.", "Discreción", "Piedra mojada", "Un blazer"], ["Verde musgo suave, fresco y natural.", "Naturalidad", "Ranitas de bosque", "Una camisa de campo"], ["Verde salvia medio, sereno y versátil.", "Armonía", "Un jardín de hierbas", "Un suéter"], ["Verde pistacho grisáceo, suave y elegante.", "Tranquilidad", "Pistachos", "Un vestido midi"], ["Turquesa marino, fresco y vibrante.", "Libertad", "Aguas del Caribe", "Un vestido de baño"], ["Verde azulado intenso, moderno y fresco.", "Creatividad", "Lagunas tropicales", "Una chaqueta liviana"], ["Verde porcelana, limpio y sofisticado.", "Claridad", "Jade pulido", "Una blusa satinada"], ["Verde hoja natural, sano y equilibrado.", "Bienestar", "Hojas de hierbabuena", "Una camisa casual"], ["Verde esmeralda, rico y elegante.", "Prosperidad", "Esmeraldas colombianas", "Un vestido de fiesta"], ["Verde oliva brillante, fresco y campestre.", "Energía natural", "Aceitunas frescas", "Una chaqueta"], ["Verde botella, profundo y clásico.", "Elegancia", "Botellas de vidrio", "Un abrigo o suéter"], ["Verde bosque, sereno y protector.", "Seguridad", "Pinos", "Una chaqueta de campo"], ["Verde musgo oscuro, como un bosque antiguo.", "Misterio", "El bosque de Robin Hood", "Un pantalón de pana"], ["Verde casi negro, sobrio y profundo.", "Fortaleza", "La selva de noche", "Un abrigo"], ["Verde noche, el negro más natural.", "Discreción", "Hojas en la sombra", "Una prenda base"], ["Celeste agua, suave como un río en calma.", "Tranquilidad", "Agua cristalina", "Una camisa de verano"], ["Azul cielo pastel, ligero y soñador.", "Ligereza", "Un cielo despejado", "Un vestido vaporoso"], ["Azul grisáceo suave, sereno y limpio.", "Calma", "Neblina de mañana", "Una blusa"], ["Azul lavanda empolvado, dulce y tranquilo.", "Serenidad", "Flores de salvia", "Una camisa de oficina"], ["Verde menta, fresco y optimista.", "Frescura", "Hojas de hierbabuena", "Un top o una falda"], ["Aguamarina luminoso, fresco y alegre.", "Alegría tranquila", "Piscinas en verano", "Un vestido de baño"], ["Turquesa veneciano, fresco y encantador.", "Inspiración", "Los canales de Venecia", "Una falda"], ["Azul petróleo vivo, profundo y fresco.", "Confianza", "Mar profundo", "Una chaqueta"], ["Azul pavo real, intenso y elegante.", "Distinción", "Plumas de pavo real", "Un vestido"], ["Verde azulado, moderno y sereno.", "Equilibrio", "Lagos de montaña", "Un suéter"], ["Azul medio, deportivo y confiable.", "Confianza", "Cielo de la tarde", "Una camisa"], ["Azul rey, clásico y lleno de seguridad.", "Seguridad", "Banderas al viento", "Un blazer"], ["Azul petróleo profundo, intelectual y sereno.", "Concentración", "Tinta de pluma", "Un abrigo"], ["Azul profundo, sólido y profesional.", "Profesionalismo", "Lagos suizos", "Un traje"], ["Gris azulado, sobrio y elegante.", "Sobriedad", "Pizarra mojada", "Un pantalón de vestir"], ["Verde petróleo oscuro, misterioso y rico.", "Profundidad", "Bosque de noche", "Un vestido largo"], ["Azul cobalto oscuro, elegante y firme.", "Autoridad", "Porcelana azul", "Un saco"], ["Azul pizarra con un toque violeta.", "Calma profunda", "Cielo antes de llover", "Un suéter"], ["Azul marino verdoso, profundo y marinero.", "Estabilidad", "Mar abierto", "Una chaqueta"], ["Azul marino clásico, serio y elegante.", "Confianza", "Uniformes navales", "Un blazer"], ["Violeta medianoche, casi negro y misterioso.", "Misterio", "Una noche estrellada", "Un vestido de noche"], ["Índigo profundo, el azul del mejor jean.", "Solidez", "Denim oscuro", "Unos jeans"], ["Verde pizarra casi negro, sobrio y profundo.", "Serenidad", "Bosque al anochecer", "Un abrigo"], ["Lavanda suave, tranquila y soñadora.", "Relajación", "Campos de lavanda", "Un suéter liviano"], ["Malva grisáceo, delicado y romántico.", "Ternura", "Pétalos secos", "Una blusa"], ["Rosa orquídea, romántico y elegante.", "Romance", "Orquídeas", "Un vestido"], ["Lila suave, creativo y femenino.", "Imaginación", "Lilas en flor", "Una falda"], ["Magenta floral, alegre y atrevido.", "Audacia", "Flores silvestres", "La prenda protagonista"], ["Malva lavanda, artístico y sereno.", "Creatividad", "Violetas", "Un suéter"], ["Violeta orquídea, creativo y original.", "Originalidad", "Flores de acónito", "Una blusa"], ["Lavanda oscuro, misterioso y calmado.", "Misterio suave", "El crepúsculo", "Un vestido"], ["Violeta azulado, profundo y soñador.", "Imaginación", "Cielo nocturno", "Una chaqueta"], ["Violeta intenso, creativo y espiritual.", "Inspiración", "Amatistas", "Un suéter"], ["Malva tostado, sobrio y cálido.", "Madurez", "Vino rosado", "Un pantalón"], ["Gris plomo, neutro y moderno.", "Neutralidad", "Nubes de tormenta", "Un abrigo"], ["Ciruela rosada, elegante y cálida.", "Sofisticación", "Ciruelas", "Una blusa"], ["Berenjena suave, misteriosa y cálida.", "Profundidad", "Berenjenas", "Un suéter"], ["Malva oscuro, sobrio y romántico.", "Elegancia", "Vino añejo", "Un vestido"], ["Vino rosado oscuro, elegante y cálido.", "Romance maduro", "Arándanos", "Un abrigo"], ["Violeta real, profundo y majestuoso.", "Nobleza", "Mantos de la realeza", "Un vestido"], ["Púrpura profundo, misterioso y lujoso.", "Lujo", "Uvas maduras", "Un detalle elegante"], ["Berenjena intensa, dramática y elegante.", "Drama", "Moras silvestres", "Un vestido de noche"], ["Ciruela oscura, profunda y sofisticada.", "Sofisticación", "Vino de ciruela", "Un abrigo"], ["Blanco puro, luz que lo combina todo.", "Limpieza", "Sábanas recién lavadas", "Una camisa clásica"], ["Gris perla, sereno y moderno.", "Neutralidad", "Un cielo nublado", "Una chaqueta"], ["Gris verdoso, mineral y tranquilo.", "Calma", "Piedras de río", "Un suéter"], ["Gris cálido, suave y acogedor.", "Equilibrio", "Piedra caliza", "Un pantalón"], ["Gris pizarra, urbano y sereno.", "Seriedad", "Tejados de pizarra", "Un abrigo"], ["Negro profundo, el clásico que nunca falla.", "Elegancia", "La noche", "Cualquier prenda"]];
 const DICT_INK = W.map(w => inkAmong(w.i, [...new Set(w.combos.flatMap(no => COMBO_BY_NO[no].colors))]));
+const HEART_PATH = 'M12 20.6s-7.6-4.6-9.4-9.3C1.4 8 3.4 4.6 6.9 4.6c2.1 0 3.6 1.2 5.1 3 1.5-1.8 3-3 5.1-3 3.5 0 5.5 3.4 4.3 6.7-1.8 4.7-9.4 9.3-9.4 9.3z';
+function isFav(i) { return S.favs.includes(i); }
+function favBtn(i) {
+  const on = isFav(i), name = W[i].name;
+  return `<button class="fav-ico${on ? ' on' : ''}" data-action="fav" data-w="${i}" aria-pressed="${on}" aria-label="${on ? 'Quitar de favoritos' : 'Guardar en favoritos'}: ${esc(name)}" title="${on ? 'Quitar de favoritos' : 'Guardar en favoritos'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${HEART_PATH}" fill="none" stroke="#1d1d1f" stroke-width="2" stroke-linejoin="round"/></svg></button>`;
+}
 function bandHtml(i, o) {
   const w = W[i], open = !!o.open;
   const n = pool().filter(g => dist(g, i) <= S.T).length;
-  return `<div class="band${open ? ' open' : ''}" ${o.action ? `data-action="${o.action}" role="button" tabindex="0" aria-expanded="${open}"` : ''} data-w="${i}" style="--bg:${w.hex};--ink:${o.ink}">
+  return `<div class="band${open ? ' open' : ''}${o.fav ? '' : ' no-fav'}" ${o.action ? `data-action="${o.action}" role="button" tabindex="0" aria-expanded="${open}"` : ''} data-w="${i}" style="--bg:${w.hex};--ink:${o.ink}">
+    ${o.fav ? favBtn(i) : ''}
     <div class="band-head"><span class="band-k">${esc(o.kicker)}</span><span class="band-name">${esc(w.name)}.</span><span class="band-tag">${esc(DESC[i][0])}</span></div>
     <div class="band-body">
       ${pinIcon(o.pinColors || [i])}
@@ -1370,7 +1419,7 @@ const SHEETS = {
       .sort((a, b) => (b.have / b.c.colors.length) - (a.have / a.c.colors.length));
     return {
       title: esc(w.name),
-      body: `<div class="acc" style="height:420px">${bandHtml(w.i, { open: true, ink: DICT_INK[w.i], kicker: `Color ${String(w.i + 1).padStart(3, '0')}`, actions: false })}</div>
+      body: `<div class="acc" style="height:420px">${bandHtml(w.i, { open: true, ink: DICT_INK[w.i], kicker: `Color ${String(w.i + 1).padStart(3, '0')}`, actions: false, fav: true })}</div>
         <div class="field"><span class="eyebrow">En tu clóset</span>
           ${mine.length ? `<div class="list">${mine.map(x => `<div class="need">${media(x.g)}<span>${esc(x.g.name)}</span><span class="mono muted">ΔE ${round1(x.d)}</span></div>`).join('')}</div>` : `<span class="muted">Ninguna prenda tiene este color a tolerancia ΔE ${S.T}.</span>`}
           <div><button class="btn small" data-action="imagine-from" data-w="${w.i}">Imaginar una prenda de este color</button></div></div>
@@ -1695,6 +1744,23 @@ const A = {
   imagine() { S.imagine = { category: '', wada: null, name: '', q: '' }; S.stack = [{ type: 'imagine', data: {} }]; renderSheet(); },
   band(el) { toggleBand(el, false); },
   acc(el) { toggleBand(el, true); },
+  'dict-view'(el) { S.dictView = el.dataset.v; S.openBand = null; savePrefs(); render(); window.scrollTo({ top: 0 }); },
+  fav(el) {
+    const i = Number(el.dataset.w), on = isFav(i);
+    S.favs = on ? S.favs.filter(x => x !== i) : S.favs.concat([i]);
+    Store.saveFavs();
+    const inFavView = S.tab === 'dict' && (S.dictView || (on ? 'fav' : 'all')) === 'fav';
+    {
+      // Actualizar solo el corazón para no cortar la animación de la franja
+      el.classList.toggle('on', !on); el.setAttribute('aria-pressed', String(!on));
+      const lbl = (!on ? 'Quitar de favoritos' : 'Guardar en favoritos');
+      el.setAttribute('aria-label', lbl + ': ' + W[i].name); el.title = lbl;
+      el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+      const n = document.querySelector('[data-action="dict-view"][data-v="fav"] .n'); if (n) n.textContent = S.favs.length;
+    }
+    if (inFavView && (on || S.stack.length)) { if (on && S.openBand === i) S.openBand = null; render(); }
+    toast(on ? 'Quitado de tus favoritos.' : 'Guardado en tus favoritos ♥');
+  },
   'next-palette'() { S.palShift = (S.palShift || 0) + 1; render(); },
   'color-filter'(el) { const w = Number(el.dataset.w); S.colorF = S.colorF === w ? null : w; render(); },
   'open-ideas'(el) { openSheet('ideas', { id: el.dataset.id }); },
