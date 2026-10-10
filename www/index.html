@@ -2219,7 +2219,9 @@ function renderSheet() {
   const sh = $('#sheet'), panel = $('#sheet-panel');
   const top = S.stack[S.stack.length - 1];
   if (!top) { if (!sh.hidden) { sh.hidden = true; panel.innerHTML = ''; } return; }
-  const prevFocus = document.activeElement && document.activeElement.id;
+  const ae = document.activeElement, prevFocus = ae && ae.id;
+  // Guardar dónde estaba el cursor para no perderlo al redibujar (si no, se escribe al revés)
+  let sel = null; try { if (ae && typeof ae.selectionStart === 'number') sel = [ae.selectionStart, ae.selectionEnd]; } catch (e) {}
   const scroll = panel.scrollTop;
   const back = S.stack.length > 1;
   const { title, body } = SHEETS[top.type](top.data);
@@ -2229,7 +2231,7 @@ function renderSheet() {
   const wasHidden = sh.hidden;
   sh.hidden = false;
   panel.scrollTop = wasHidden ? 0 : scroll;
-  if (prevFocus) { const el = document.getElementById(prevFocus); if (el && panel.contains(el)) el.focus(); }
+  if (prevFocus) { const el = document.getElementById(prevFocus); if (el && panel.contains(el)) { el.focus(); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch (e) {} } }
   if (top.type === 'draft' && S.draft && S.draft.step === 'cut') mountCutter();
   if ($('#fab-box')) mountFabric();
 }
